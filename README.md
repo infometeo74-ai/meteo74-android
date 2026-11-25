@@ -4,9 +4,11 @@ Version 0.3.4 · 25 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-Pour installer la 0.3.4 depuis Météo74 0.2.0 à 0.3.3, ou pour installer les versions suivantes, ouvrir **Paramètres → Rechercher une mise à jour**, puis **Télécharger**. Android ouvre l’écran de confirmation de l’installation. Les favoris sont conservés. La première fois, Android peut demander l’autorisation d’installer des mises à jour depuis Météo74.
+[Télécharger Météo74 0.3.4 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.3.4.apk)
 
-Pour une première installation sur Android 7 ou plus récent, depuis la 0.1.0 ou pour une mise à jour manuelle, ouvrir `Meteo74-0.3.4.apk` sur le téléphone. Android propose de mettre à jour Météo74 et conserve les favoris. Les futures versions utilisent la même clé de signature. Le téléchargement intégré fonctionne sur Wi-Fi ou données mobiles et peut reprendre après une interruption. L’application vérifie la taille de l’APK, son empreinte SHA-256, son identifiant, sa version et sa signature.
+Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Le même fichier permet de mettre à jour Météo74 en conservant les favoris.
+
+Si tu utilises déjà Météo74 0.2.0 ou une version ultérieure, ouvre **Paramètres → Rechercher une mise à jour**, puis **Télécharger**. La première fois, Android peut te demander l’autorisation d’installer la mise à jour. Le téléchargement fonctionne en Wi-Fi ou sur données mobiles et peut reprendre après une interruption. L’application vérifie le fichier et la signature de Météo74 avant d’ouvrir l’installateur Android.
 
 ## Radar
 
