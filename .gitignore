@@ -1,0 +1,13 @@
+.gradle/
+**/build/
+local.properties
+.signing/
+
+# Fichiers de distribution et accès locaux
+*.apk
+*.aab
+*.jks
+*.keystore
+supabase/.temp/
+supabase/.branches/
+release/apk.ts
