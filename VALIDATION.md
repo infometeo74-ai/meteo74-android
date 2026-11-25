@@ -8,7 +8,7 @@ Les 20 tests des prévisions et du radar passent. Android Lint a terminé avec c
 
 Le service de mise à jour du projet `bepcgggpdtxwaifiyrah` renvoie le manifeste 0.3.4 et l’APK attendu. Le téléchargement complet correspond à l’empreinte ci-dessus. La reprise partielle a renvoyé HTTP 206 avec les octets demandés. Le service renvoie HTTP 416 pour un intervalle au-delà du fichier, 404 pour un autre nom et 405 pour une tentative d’écriture.
 
-L’adresse embarquée dans la 0.3.3 propose également la 0.3.4. Le téléchargement complet, la reprise HTTP 206 et l’empreinte du binaire ont été vérifiés depuis cette ancienne adresse. La 0.3.4 utilise directement son propre projet pour toutes les recherches de mise à jour.
+Le 25 novembre 2026, après le retrait du relais de migration, l’adresse embarquée dans la 0.3.3 a renvoyé HTTP 410 pour le manifeste et pour l’APK. Le service indépendant embarqué dans la 0.3.4 a renvoyé HTTP 200 pour les deux fichiers. L’empreinte de l’APK téléchargé correspond au manifeste. Les installations antérieures passent en 0.3.4 en ouvrant l’APK du dépôt Météo74.
 
 ## Vérifications de la version 0.3.3
 
