@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 10,
-  "versionName": "0.5.0",
-  "file": "Meteo74-0.5.0.apk",
-  "size": 4635158,
-  "sha256": "bfe23083cdba173bbc592a08a7df8933bde4b0994d2ab299531f2d0861141064",
-  "notes": "Nouvel onglet Neige : 40 stations et accès alpins, 22 sites de ski de fond, prévisions par altitude, enneigement et pistes selon les bulletins des domaines. Les villes se gèrent depuis l’accueil."
+  "versionCode": 11,
+  "versionName": "0.5.1",
+  "file": "Meteo74-0.5.1.apk",
+  "size": 4637550,
+  "sha256": "b07b4e18eecdf9bc0db8f8603f69935ed6d2e52a14d09f6e673493e0e9feb33a",
+  "notes": "Ajoutez vos stations à l’accueil. Les fiches affichent le sommet des pistes par secteur, les relevés de neige et les ouvertures directement dans Météo74."
 }

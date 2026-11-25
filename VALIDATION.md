@@ -1,3 +1,13 @@
+# Météo74 0.5.1
+
+25 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 11. Les 4 637 550 octets de l’APK ont pour SHA-256 `b07b4e18eecdf9bc0db8f8603f69935ed6d2e52a14d09f6e673493e0e9feb33a`. La signature Android correspond à celle de la 0.5.0. Les 86 fichiers de l’interface correspondent aux sources et l’alignement ZIP est validé.
+
+Les 34 tests passent. Les vérifications neige couvrent les 49 secteurs alpins, les altitudes et coordonnées des prévisions, les bulletins expirés, les préouvertures et le calcul des totaux quand le statut d’une piste manque.
+
+Dans Chromium mobile, l’interface extraite de l’APK a affiché les prévisions au sommet de Bochard et les relevés du service en production. Une station alpine et un site nordique ont été ajoutés à l’accueil. Les essais ont couvert la persistance au rechargement, le retour depuis une tuile, le retrait hors connexion et le retrait du dernier favori. L’accueil a été contrôlé aux largeurs de 320, 393 et 600 pixels.
+
+Le manifeste servi dans les paramètres propose la version 0.5.1. Les deux téléchargements complets, depuis l’application et depuis le dépôt public, correspondent à l’APK signé. Un intervalle de 1 024 octets renvoie HTTP 206 et un intervalle au-delà du fichier renvoie HTTP 416. Le service de distribution accepte uniquement les lectures.
+
 # Météo74 0.5.0
 
 25 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 10. Le fichier signé contient 4 635 158 octets. SHA-256 `bfe23083cdba173bbc592a08a7df8933bde4b0994d2ab299531f2d0861141064`. Le certificat correspond à celui de la version 0.4.1. Les 86 fichiers de l’interface embarquée correspondent aux sources. Le contrôle d’alignement ZIP passe.

@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.5.0 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.5.1 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -57,6 +57,17 @@ $('about').onclick=()=>openDialog('about-dialog');
 $('app-update').onclick=e=>{if(!navigator.userAgent.includes('Meteo74Android/')){e.preventDefault();toast('La mise à jour est disponible dans l’application Android.');}};
 const equal=(a,b)=>C.validPlace(a)&&C.validPlace(b)&&C.placeKey(a)===C.placeKey(b);
 const entries=()=>[...(state.following?[{key:'location',place:state.position}]:[]),...state.favorites.map(p=>({key:C.placeKey(p),place:p}))];
+const stationsById=new Map(SnowStations.stations.map(s=>[s.id,s]));
+const savedStations=storage.get('snow.favorites',[]);
+state.stationIds=Array.isArray(savedStations)?[...new Set(savedStations.filter(id=>stationsById.has(id)))]:[];
+const homeEntries=()=>[...entries(),...state.stationIds.map(id=>({key:'ski:'+id,station:stationsById.get(id)}))];
+function pinStation(id){
+    if(!stationsById.has(id))return;
+    const remove=state.stationIds.includes(id);
+    state.stationIds=remove?state.stationIds.filter(k=>k!==id):[...state.stationIds,id];
+    storage.set('snow.favorites',state.stationIds);renderPlaces();
+    toast(stationsById.get(id).name+(remove?' retiré de l’accueil':' ajouté à l’accueil'));
+}
 const homeNodes=new Map(), busy=new Map(), errors=new Map();
 let refreshSequence=0;
 function makeCard(key,clickable) {
@@ -91,10 +102,12 @@ function paintCard(node,entry,record) {
 }
 function paintHomeEntry(entry) {
     const node=homeNodes.get(entry.key);
-    if(node)paintCard(node,entry,entry.place&&cached(entry.place));
+    if(!node)return;
+    if(entry.station)winter.paintHome(node,entry.station);
+    else paintCard(node,entry,entry.place&&cached(entry.place));
 }
 function renderPlaces() {
-    const list=entries(), live=new Set(list.map(e=>e.key));
+    const list=homeEntries(), live=new Set(list.map(e=>e.key));
     for(const [k,node] of homeNodes)if(!live.has(k)){node.remove();homeNodes.delete(k);}
     const container=$('home-cards');
     list.forEach((e,i)=>{
@@ -106,14 +119,14 @@ function renderPlaces() {
     $('home-empty').hidden=list.length>0;
     $('home-tools').hidden=!list.length;
     $('favorites-list').innerHTML=list.length?list.map(e=>{
-        const label=e.key==='location'?'Ma position':e.place.name;
-        const sub=e.key==='location'?e.place?.name||'Position du téléphone':e.place.admin2||e.place.country||'Commune enregistrée';
-        return '<div class="favorite-row"><button class="favorite-choose" data-open="'+e.key+'"><span>'+icon(e.key==='location'?'locate':'pin')+'</span><span><b>'+escape(label)+'</b><small>'+escape(sub)+'</small></span></button><button class="icon-button" data-delete="'+e.key+'" aria-label="Retirer '+escape(label)+'">'+icon('trash')+'</button></div>';
+        const label=e.key==='location'?'Ma position':e.station?.name||e.place.name;
+        const sub=e.station?(e.station.kind==='fond'?'Ski de fond':'Ski alpin'):e.key==='location'?e.place?.name||'Position du téléphone':e.place.admin2||e.place.country||'Commune enregistrée';
+        return '<div class="favorite-row"><button class="favorite-choose" data-open="'+e.key+'"><span>'+icon(e.station?'mountain':e.key==='location'?'locate':'pin')+'</span><span><b>'+escape(label)+'</b><small>'+escape(sub)+'</small></span></button><button class="icon-button" data-delete="'+e.key+'" aria-label="Retirer '+escape(label)+'">'+icon('trash')+'</button></div>';
     }).join(''):'<button class="place-action" data-add>Ajouter une ville</button>';
     updateCredits();
 }
 function updateCredits(){
-    const show=state.view==='now'?entries().some(e=>e.place&&cached(e.place)):['detail','forecast'].includes(state.view)&&!!state.data;
+    const show=state.view==='now'?(state.stationIds.length>0||entries().some(e=>e.place&&cached(e.place))):['detail','forecast'].includes(state.view)&&!!state.data;
     $('weather-source').hidden=!show;$('weather-credits').hidden=!show;
 }
 function selectEntry(e){
@@ -127,6 +140,7 @@ function activeEntry() {
     return list.find(e=>state.selectedLocation?e.key==='location':e.key!=='location'&&equal(e.place,state.place))||list[0]||null;
 }
 function openEntry(key){
+    if(key.startsWith('ski:')&&stationsById.has(key.slice(4))){switchView('snow',key.slice(4));return;}
     const entry=entries().find(e=>e.key===key);
     if(!entry)return;
     if(!entry.place){startFollowing();return;}
@@ -139,6 +153,7 @@ $('favorites-list').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;
     if(b.dataset.open){closeDialog($('places-dialog'));openEntry(b.dataset.open);return;}
     const key=b.dataset.delete;if(!key)return;
+    if(key.startsWith('ski:')){pinStation(key.slice(4));if(!homeEntries().length)closeDialog($('places-dialog'));return;}
     if(key==='location'){
         locationWatch.stop();state.following=false;state.position=null;state.geoMessage='';state.geoDenied=false;
         storage.set('follow-position',false);storage.remove('last-position');
@@ -147,7 +162,7 @@ $('favorites-list').onclick=e=>{
     const next=activeEntry();
     if(next)selectEntry(next);else{state.place=null;state.selectedLocation=false;storage.remove('place');storage.remove('selected-location');}
     renderPlaces();radar.placeChanged();
-    if(!entries().length)closeDialog($('places-dialog'));
+    if(!homeEntries().length)closeDialog($('places-dialog'));
 };
 function cached(p){const c=storage.get('weather.'+C.placeKey(p),null);return c&&C.validForecast(c.data)&&C.finite(c.fetchedAt)?c:null;}
 function saveWeather(p,data){const key=C.placeKey(p),fetchedAt=Date.now();storage.set('weather.'+key,{data,fetchedAt});let keys=storage.get('weather-index',[]);if(!Array.isArray(keys))keys=[];keys=keys.filter(k=>k!==key);keys.push(key);while(keys.length>16)storage.remove('weather.'+keys.shift());storage.set('weather-index',keys);return fetchedAt;}
@@ -180,7 +195,10 @@ async function loadHome(force=false) {
             if(current)paintHomeEntry(current);
         }
     }
-    await Promise.all(Array.from({length:Math.min(list.length,3)},next));
+    const snow= winter.loadHome(state.stationIds.map(id=>stationsById.get(id)),force,s=>{
+        if(seq===refreshSequence)paintHomeEntry({key:'ski:'+s.id,station:s});
+    });
+    await Promise.all([snow,...Array.from({length:Math.min(list.length,3)},next)]);
     if(seq===refreshSequence){$('refresh').classList.remove('busy');updateCredits();}
 }
 function renderFocus(p,record){
@@ -229,11 +247,11 @@ function drawChart(hours,tz){const s=C.scale(hours.map(h=>h.temperature));if(!s)
 }
 function renderDaily(d,di){const a=d.daily,tz=d.timezone,sc=C.scale([...a.temperature_2m_min,...a.temperature_2m_max]);$('daily-list').innerHTML=a.time.map((t,i)=>{if(di>=0&&i<di)return '';const lo=a.temperature_2m_min[i],hi=a.temperature_2m_max[i],co=C.condition(a.weather_code[i]);const left=sc&&C.finite(lo)?Math.max(0,100*sc.ratio(lo)):0,range=sc&&C.finite(lo)&&C.finite(hi)?Math.max(3,100*(hi-lo)/(sc.high-sc.low)):0;
  return '<details class="daily-row"><summary aria-label="'+escape(C.date(t,tz,{weekday:'long',day:'numeric',month:'long'})+', '+co.label+', '+C.fmt(lo)+' à '+C.fmt(hi)+' degrés')+'"><span class="daily-date"><b>'+(i===di?'Aujourd’hui':i===di+1&&di>=0?'Demain':C.date(t,tz,{weekday:'long'}))+'</b><small>'+C.date(t,tz,{day:'numeric',month:'short'})+'</small></span>'+weather(a.weather_code[i])+'<span class="rain-prob">'+C.fmt(a.precipitation_probability_max[i])+' %</span><span class="daily-range"><span>'+C.fmt(lo)+'°</span><span class="range-track"><span class="range-fill" style="left:'+left+'%;width:'+range+'%"></span></span><span>'+C.fmt(hi)+'°</span></span></summary><div class="daily-extra"><strong>'+co.label+'</strong><div class="daily-extra-grid"><span>Pluie / neige : '+C.fmt(a.precipitation_sum[i],1)+' mm</span><span>UV maximum : '+C.fmt(a.uv_index_max[i],1)+'</span><span>Vent max. : '+C.fmt(a.wind_speed_10m_max[i])+' km/h</span><span>Rafales : '+C.fmt(a.wind_gusts_10m_max[i])+' km/h</span><span>Lever : '+C.clock(a.sunrise[i],tz)+'</span><span>Coucher : '+C.clock(a.sunset[i],tz)+'</span></div></div></details>';}).join('')||'<p class="empty-text">Actualisez les prévisions.</p>';}
-function switchView(view){
+function switchView(view,stationId){
     if(!['now','detail','radar','forecast','snow'].includes(view))return;
     const before=state.view;
     if(before==='snow'&&view!=='snow')winter.leave();
-    if(before==='now'&&view!=='now')state.homeScroll=window.scrollY;
+    if(before==='now'&&view!=='now'){state.homeScroll=window.scrollY;winter.stopHome();}
     state.view=view;++refreshSequence;notice('');$('refresh').classList.remove('busy');
     document.body.classList.toggle('radar-active',view==='radar');
     document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+view);
@@ -246,7 +264,7 @@ function switchView(view){
     if(view==='now'){renderPlaces();loadHome();}else if(view==='detail'||view==='forecast')loadFocus();
     updateCredits();
     window.scrollTo(0,view==='now'&&before!=='now'?state.homeScroll:0);
-    if(view==='snow')winter.enter();
+    if(view==='snow')winter.enter(stationId);
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 $('back-places').onclick=()=>switchView('now');
@@ -258,6 +276,7 @@ function openSearch(){
     $('search-input').value='';state.searchSeq++;showResults(suggestedPlaces());openDialog('search-dialog');
 }
 document.addEventListener('click',e=>{
+    if(e.target.closest('[data-stations]'))switchView('snow');
     if(e.target.closest('[data-add]'))openSearch();
     if(e.target.closest('[data-follow]'))startFollowing();
 });
@@ -296,7 +315,7 @@ function startFollowing(){
     selectEntry({key:'location',place:state.position});
     renderPlaces();switchView('now');window.scrollTo(0,0);locationWatch.start(true);
 }
-const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService});
+const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService,isPinned:id=>state.stationIds.includes(id),pinStation,goHome:()=>switchView('now')});
 const radar=MeteoRadar.create({$,C,storage,icon,escape,fetchJSON,place:()=>activeEntry()?.place||null});
 function refresh(force=false){
     notice('');
@@ -321,7 +340,7 @@ window.meteoApp={back(){
     if(state.view!=='now'){switchView('now');return true;}return false;
 },pause,resume};
 document.addEventListener('visibilitychange',()=>document.hidden?pause():resume());
-window.addEventListener('offline',()=>{if(entries().length)notice('Sans réseau · dernières prévisions enregistrées.');});
+window.addEventListener('offline',()=>{if(homeEntries().length)notice('Sans réseau · dernières prévisions enregistrées.');});
 window.addEventListener('online',()=>refresh(true));
 renderPlaces();resume();
 })();

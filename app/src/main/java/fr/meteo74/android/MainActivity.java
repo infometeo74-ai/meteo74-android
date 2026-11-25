@@ -71,9 +71,6 @@ public class MainActivity extends Activity {
                     updater.check(); return true;
                 }
                 if ("appassets.androidplatform.net".equals(uri.getHost()) && "https".equals(uri.getScheme())) return false;
-                if (!request.isForMainFrame() && "https".equals(uri.getScheme())
-                        && ("avoriaz.digisnow.app".equals(uri.getHost()) || "lesgets.digisnow.app".equals(uri.getHost())
-                        || "skionlive.com".equals(uri.getHost()))) return false;
                 if ("https".equals(uri.getScheme()) && request.isForMainFrame()) {
                     try { startActivity(new Intent(Intent.ACTION_VIEW,uri)); } catch(Exception e) { Toast.makeText(MainActivity.this,"Aucun navigateur disponible.",Toast.LENGTH_SHORT).show(); }
                 }

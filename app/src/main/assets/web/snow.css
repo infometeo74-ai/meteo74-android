@@ -45,9 +45,6 @@
 .snow-metrics small{font-size:12px;color:var(--muted);line-height:1.3}
 .snow-metrics strong{font-size:20px;line-height:1.35;font-weight:650}
 .snow-note{font-size:12px;line-height:1.5;color:#576f80}
-.snow-metrics+.snow-note,.snow-note+.snow-link,.snow-metrics+.snow-link{margin-top:8px}
-.snow-link{display:inline-flex;align-items:center;gap:2px;min-height:32px;color:#246483;font-size:13px;font-weight:650;text-decoration:none}
-.snow-link .icon{width:14px;height:14px}
 .snow-day,.snow-day-legend{display:grid;grid-template-columns:minmax(102px,1.2fr) .9fr .8fr;gap:5px;align-items:center;text-align:right}
 .snow-day-legend{color:var(--muted);font-size:11px;padding-bottom:7px}
 .snow-day{border-top:1px solid var(--line);padding:6px 0;font-size:13px;min-height:44px;font-variant-numeric:tabular-nums}
@@ -59,7 +56,16 @@
 @media(min-width:580px){.snow-group summary,.snow-row{padding-left:19px;padding-right:19px}.snow-metrics{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
 @media(max-width:345px){.snow-panel,.snow-conditions{padding:10px}.snow-day{font-size:12px}.snow-context{align-items:start;flex-direction:column;gap:2px}}
 
-.snow-widget{margin:7px 0 0;border:1px solid var(--line);border-radius:14px;background:white}
-.snow-widget summary{padding:12px 14px;cursor:pointer;color:#246483;font-size:13px;font-weight:650}
-.snow-widget iframe{display:block;width:100%;height:min(58vh,500px);border:0;border-top:1px solid var(--line)}
-.snow-widget .snow-link{margin:3px 14px}
+
+.snow-pin{display:inline-flex;align-items:center;gap:7px;min-height:40px;margin-top:9px;padding:6px 12px;border:1px solid var(--line);border-radius:20px;color:var(--blue);background:#fff;font-size:13px;font-weight:650}
+.snow-pin .icon{width:17px;height:17px}
+.snow-pin[aria-pressed="true"]{background:#e4eff6}
+.snow-pin[aria-pressed="true"] .icon{fill:currentColor}
+.snow-plan{display:grid;gap:3px;margin:8px 0;color:var(--text);font-size:13px}
+.snow-metrics+.snow-note,.snow-routes,.snow-plan+.snow-note{margin-top:10px}
+.snow-routes summary{color:var(--blue);font-size:14px;font-weight:650;padding:9px 0;cursor:pointer}
+.snow-routes h3{font-size:14px;margin:12px 0 3px}
+.snow-routes div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.snow-routes small{color:var(--muted);white-space:nowrap}
+.snow-routes small[data-state="open"]{color:#236745}
+@media(max-width:360px){.home-tools button{gap:3px;font-size:12px}.home-tools .icon{width:14px}}
