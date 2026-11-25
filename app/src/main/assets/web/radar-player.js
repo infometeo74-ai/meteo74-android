@@ -8,7 +8,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     let map,marker,paint,shade,painter,paintView,shadeView,worker,local,metaAbort,view;
     let provider='swiss',frames=[],active=false,suspended=false,wants=true,metadataAt=0,metaSeq=0,sequence=0;
     let index=0,progress=0,raf=0,lastTick=null,buffering=true,bufferStart=0,msPerFrame=0,sampleToken=0,terrainFailed=false,lastUI=0;
-    let warmPending=false;
+    let warmPending=false,franceOverview=false,framing=false;
     const still=[0,0];
     const ready=new Map(),pending=new Set(),failed=new Set(),motions=new Map();
     const ui=(id,value)=>{if($(id).textContent!==value)$(id).textContent=value;};
@@ -21,24 +21,18 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         $('radar-range').disabled=frames.length<2;$('radar-speed').value=String(speed);$('radar-snow').checked=snow;$('radar-opacity').value=String(Math.round(opacity*100));
     }
     function legend(){
-        const swiss=provider==='swiss',france=provider==='france',numeric=swiss||france;
         for(const name of ['swiss','france','europe']){
             const selected=provider===name,button=$('radar-'+name);
             button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));
         }
-        $('radar-snow').closest('label').hidden=france;
-        const bands=RadarRender.intensityBands;
-        const row=(label,kind)=>{
-            const scale=numeric?'<i class="band-key">'+bands.map(b=>'<span style="background:'+b[kind]+'"></span>').join('')+'</i>':'<i class="eu-'+(kind==='rain'?'key':'snow-key')+'"></i>';
-            return '<div class="scale-row"><b>'+label+'</b>'+scale+'</div>';
-        };
-        $('radar-legend').className='radar-legend '+(numeric?'swiss-legend':'europe-legend');
-        const values=france?FranceRadar.bands:bands.map(b=>b.from===0?'&lt;0,1':b.from===50?'50+':b.from.toLocaleString('fr-FR'));
-        const ticks=numeric?values.map(n=>'<span>'+n+'</span>').join(''):'<span>Faible</span><span>Forte</span>';
-        $('radar-legend').innerHTML=row(swiss?'mm/h':france?'dBZ':'Intensité','rain')+(snow&&!france?row('Neige probable','snow'):'')+'<div class="scale-caption">'+ticks+'</div>';
+        const bands=RadarColors.intensityBands;
+        const row=(label,kind)=>'<div class="scale-row"><b>'+label+'</b><i class="band-key">'+
+            bands.map(b=>'<span style="background:'+b[kind]+'"></span>').join('')+'</i></div>';
+        const ticks=bands.map(b=>'<span>'+(b.from===0?'&lt;0,1':b.from===50?'50+':b.from.toLocaleString('fr-FR'))+'</span>').join('');
+        $('radar-legend').innerHTML=row('mm/h','rain')+(snow?row('Neige probable','snow'):'')+'<div class="scale-caption">'+ticks+'</div>';
         const sources={
             swiss:'<a href="https://opendatadocs.meteoswiss.ch/d-radar-data/d1-precipitation-radar-products">MétéoSuisse</a>'+(snow?' · <a href="https://open-meteo.com/">Open-Meteo</a>':''),
-            france:'<a href="https://www.eumetnet.eu/observations/weather-radar-network/">Météo-France · EUMETNET OPERA</a>',
+            france:'<a href="https://www.eumetnet.eu/observations/weather-radar-network/">Météo-France · EUMETNET OPERA</a>'+(snow?' · <a href="https://open-meteo.com/">Open-Meteo</a>':''),
             europe:'<a href="https://www.rainviewer.com/">RainViewer</a>'
         };
         $('radar-source').innerHTML=sources[provider];
@@ -49,8 +43,9 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         if(Date.now()/1000-frames[frames.length-1].time>1800)notes.push('Dernière observation reçue il y a plus de 30 min.');
         if(failed.size)notes.push('Certaines images sont indisponibles.');
         if(terrainFailed)notes.push('Relief partiellement indisponible.');
-        if(snow&&provider==='swiss'&&ready.get(frames[index]?.time)?.phaseReady===false)notes.push('Type de précipitations indisponible sur une partie de la carte.');
-        notes.push(provider!=='europe'?'Mesures espacées de 5 min. Mouvement interpolé. Touchez la carte pour lire une mesure.':'Images espacées de 10 min. Mouvement interpolé.');
+        if(snow&&ready.get(frames[index]?.time)?.phaseReady===false)notes.push('Type de précipitations indisponible sur une partie de la carte.');
+        notes.push('Observations toutes les '+(provider==='europe'?'10':'5')+' min. Mouvement interpolé.');
+        notes.push(provider==='swiss'?'Touchez la carte pour lire une mesure.':'Touchez la carte pour lire l’intensité estimée.');
         if(provider!=='europe')notes.push('Hachures : mesure indisponible.');
         ui('radar-message',notes.join(' '));
     }
@@ -74,7 +69,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     function reposition(){position(paint,paintView);position(shade,shadeView);}
     function surface(pane,name,tag='canvas'){const c=document.createElement(tag);c.className='radar-surface '+name;c.setAttribute('aria-hidden','true');pane.appendChild(c);return c;}
     function initMap(){
-        const chosen=place(),p=chosen||{latitude:46.02,longitude:6.38};map=L.map('map',{minZoom:4,maxZoom:14,zoomAnimation:false,fadeAnimation:false}).setView([p.latitude,p.longitude],8);
+        const chosen=place(),p=chosen||{latitude:46.02,longitude:6.38};map=L.map('map',{minZoom:4,maxZoom:14,zoomSnap:.05,zoomAnimation:false,fadeAnimation:false}).setView([p.latitude,p.longitude],8);
         for(const [name,z] of [['base',200],['relief',300],['department',320],['radar',350]]){const pane=map.createPane(name);pane.style.zIndex=z;pane.style.pointerEvents='none';}
         map.getPane('base').classList.add('muted-basemap');map.attributionControl.setPrefix(false);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,pane:'base',attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a>'}).addTo(map);
@@ -90,7 +85,10 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
             L.polygon([world,...rings],{pane,interactive,stroke:false,fillColor:'#2a4056',fillOpacity:.12,fillRule:'evenodd',smoothFactor:.3}).addTo(map);
             L.geoJSON(feature,{pane,interactive,style:{pane,color:'#356071',opacity:.82,weight:1.7,fill:false,smoothFactor:.3}}).addTo(map);
         }).catch(()=>{ui('radar-message','Contour départemental indisponible.');});
-        map.on('move zoom resize',reposition);map.on('moveend resize',()=>{if(visible()&&frames.length)prepare();});map.on('click',inspect);
+        map.on('move zoom resize',reposition);
+        map.on('dragstart zoomstart',()=>{if(!framing)franceOverview=false;});
+        map.on('resize',()=>{if(provider==='france'&&franceOverview)frameZone();});
+        map.on('moveend resize',()=>{if(visible()&&frames.length)prepare();});map.on('click',inspect);
         startRenderer();legend();controls();
     }
     function closeImages(){for(const data of ready.values())data.image.close?.();ready.clear();pending.clear();failed.clear();motions.clear();}
@@ -123,7 +121,9 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         if(!view||m.id!==view.id||!visible()){m.image?.close?.();return;}
         if(m.type==='sample'){
             if(m.token!==sampleToken||!sampleLocation)return;
-            const value=provider==='france'?(m.dry?'Aucun écho détecté':m.dbz==null?'Pas de mesure à cet endroit':C.fmt(m.dbz,1)+' dBZ'):m.rate==null?'Pas de mesure à cet endroit':m.rate===0?'Aucune précipitation détectée':C.fmt(m.rate,m.rate<1?2:1)+' mm/h';
+            let value='Pas de mesure à cet endroit';
+            if(m.rate===0)value=provider==='swiss'?'Aucune précipitation détectée':'Aucun écho visible';
+            else if(m.rate>0)value=(provider==='swiss'?'':'≈ ')+C.fmt(m.rate,m.rate<1?2:1)+' mm/h';
             L.popup({autoPan:false}).setLatLng(sampleLocation).setContent('<b>'+value+'</b>'+(m.phase?'<br>'+m.phase:'')+'<br>Mesure de '+clock(m.time)).openOn(map);return;
         }
         if(m.type==='terrain'){shade.width=view.w;shade.height=view.h;shade.getContext('2d').drawImage(m.image,0,0);m.image.close?.();shadeView=view;position(shade,shadeView);terrainFailed=!m.complete;messages();return;}
@@ -213,7 +213,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     function seek(i){failed.delete(frames[i].time);index=i;progress=0;lastTick=null;buffering=true;wants=false;controls();pump();schedule();}
     let sampleLocation=null;
     function inspect(e){
-        if(provider==='europe'||!view||paintView!==view||!ready.get(frames[index]?.time))return;
+        if(!view||paintView!==view||!ready.get(frames[index]?.time))return;
         let i=index;if(progress>=.5){const j=nextIndex(index);if(j>i&&ready.has(frames[j].time))i=j;}
         seek(i);sampleLocation=e.latlng;const pt=map.project(e.latlng,view.z);send({type:'sample',id:view.id,token:++sampleToken,frame:frames[i],lon:e.latlng.lng,lat:e.latlng.lat,x:(pt.x-view.left)/view.cssW,y:(pt.y-view.top)/view.cssH});
     }
@@ -238,7 +238,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
                 const old=frames[index]?.time,oldNext=frames[nextIndex(index)]?.time;
                 const byTime=new Map(frames.map(f=>[f.time,f.url])),first=list[0].time,last=list[list.length-1].time;
                 const reuse=view&&!force&&list.every(f=>!byTime.has(f.time)||byTime.get(f.time)===f.url)&&
-                    !(provider==='swiss'&&snow&&Math.floor(last/3600)!==Math.floor(view.lastTime/3600));
+                    !(provider!=='europe'&&snow&&Math.floor(last/3600)!==Math.floor(view.lastTime/3600));
                 frames=list;index=old?nearest(old):0;
                 if(!reuse||old!==frames[index].time||oldNext!==frames[nextIndex(index)]?.time){progress=0;lastTick=null;buffering=true;}
                 const range=$('radar-range');range.min=first;range.max=last;range.step='1';
@@ -266,11 +266,28 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     function leave(){active=false;cancelWork();map?.closePopup();}
     function suspend(){if(suspended)return;suspended=true;cancelWork();}
     function resume(){if(!active||document.hidden)return;if(suspended){suspended=false;map?.invalidateSize({pan:false});}if(frames.length&&!view)prepare();metadata();schedule();}
-    function changeSource(name){if(name===provider)return;cancelWork();map.closePopup();provider=name;metadataAt=0;frames=[];index=0;progress=0;wants=true;paintView=null;painter.clear();ui('radar-time','—');ui('radar-first','—');ui('radar-last','—');
-        if(name==='france')map.fitBounds([[41.25,-5.2],[51.15,9.65]],{padding:[8,8]});
-        else if(name==='europe')map.fitBounds([[39,-8],[60,25]],{padding:[5,5]});
-        else{const p=place();map.setView(p?[p.latitude,p.longitude]:[46.02,6.38],8);}
-        legend();controls();metadata(true);}
+    function frameZone(){
+        if(!map)return;
+        framing=true;
+        try{
+            if(provider==='france'){
+                // Fit the mainland at a fractional zoom. Corsica remains in the observation grid.
+                map.fitBounds([[42.32,-5.14],[51.10,8.23]],{padding:[4,4],animate:false});
+                franceOverview=true;
+            }else if(provider==='europe'){
+                map.fitBounds([[39,-8],[60,25]],{padding:[5,5],animate:false});
+            }else{
+                const p=place();map.setView(p?[p.latitude,p.longitude]:[46.02,6.38],8);
+            }
+        }finally{framing=false;}
+    }
+    function changeSource(name){
+        if(name===provider)return;
+        cancelWork();map.closePopup();provider=name;metadataAt=0;frames=[];index=0;progress=0;wants=true;paintView=null;painter.clear();
+        ui('radar-time','—');ui('radar-first','—');ui('radar-last','—');
+        franceOverview=false;$('view-radar').dataset.zone=name;map.invalidateSize({pan:false});frameZone();
+        legend();controls();metadata(true);
+    }
     function refresh(){failed.clear();metadata(true);}
     for(const name of ['swiss','france','europe'])$('radar-'+name).onclick=()=>changeSource(name);
     $('radar-play').onclick=()=>{wants=!wants;lastTick=null;if(wants){buffering=true;map?.closePopup();}controls();pump();schedule();};
@@ -278,13 +295,13 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     $('radar-speed').onchange=e=>{const n=Number(e.target.value);if(speeds.includes(n)){speed=n;lastTick=null;storage.set('radar.speed',n);schedule();}};
     $('radar-snow').onchange=e=>{snow=e.target.checked;storage.set('radar.snow',snow);map?.closePopup();legend();ui('radar-badge','Actualisation des couches…');prepare(true);};
     $('radar-opacity').oninput=e=>{opacity=Number(e.target.value)/100;storage.set('radar.opacity',opacity);if(paint)paint.style.opacity=opacity;};
-    $('recenter').onclick=()=>{const p=place();map?.setView(p?[p.latitude,p.longitude]:[46.02,6.38],8);};$('retry-radar').onclick=refresh;
+    $('recenter').onclick=frameZone;$('retry-radar').onclick=refresh;
     setInterval(()=>{if(visible()&&Date.now()-metadataAt>290000)metadata();},30000);
     return {enter,leave,resume,suspend,refresh,placeChanged(){if(map){
         const p=place();
         if(!p){marker.remove();return;}
         marker.setLatLng([p.latitude,p.longitude]).addTo(map);
-        if(!active)map.setView([p.latitude,p.longitude],map.getZoom());
+        if(!active&&provider==='swiss')map.setView([p.latitude,p.longitude],map.getZoom());
     }}};
 }
 root.MeteoRadar={create};

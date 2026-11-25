@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.4.0 · 25 novembre 2026 · `fr.meteo74.android`
+Version 0.4.1 · 25 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.4.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.4.0.apk)
+[Télécharger Météo74 0.4.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.4.1.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -24,11 +24,13 @@ Sur **Suisse & Alpes**, l’application lit les observations PRECIP de MétéoSu
 
 Activer **Neige** pour distinguer en violet les précipitations probablement neigeuses sur le radar suisse. La limite pluie-neige horaire du modèle ICON-CH1 est interpolée à l’heure de chaque observation et comparée à l’altitude du terrain. Les couleurs représentent une intensité en équivalent eau. Si le modèle ou le terrain est indisponible, l’intensité reste visible et l’interface signale l’incertitude sur le type.
 
-Le mode **France** utilise les réflectivités maximales du composite OPERA produit par Météo-France pour EUMETNET, avec les radars français et ceux des pays voisins. La grille de 1 km est recadrée sur la France métropolitaine, Corse comprise. Les observations espacées de cinq minutes utilisent le même lecteur que le radar alpin. La légende et la mesure au toucher sont en dBZ. Le produit français ne fournit pas le type pluie/neige. Le service public de Météo74 prépare la grille depuis les GeoTIFF officiels et la transmet comprimée au téléphone.
+Le mode **France** utilise les réflectivités maximales du composite OPERA produit par Météo-France pour EUMETNET, avec les radars français et ceux des pays voisins. La grille de 1 km est recadrée sur la France métropolitaine, Corse comprise. Les observations espacées de cinq minutes utilisent le même lecteur que le radar alpin. La carte s’ouvre sur la France continentale à un zoom ajusté à l’écran. Le bouton de recentrage retrouve ce cadrage. La réflectivité est convertie en intensité estimée avec la relation de Marshall–Palmer. L’option Neige compare la limite pluie-neige du modèle ICON-EU à l’altitude du terrain. Le service public de Météo74 prépare la grille depuis les GeoTIFF officiels et la transmet comprimée au téléphone.
 
 Le contour de la Haute-Savoie suit le tracé IGN. L’extérieur du département est légèrement assombri sous la couche de précipitations. Les noms des communes proviennent du fond OpenStreetMap.
 
-Sur **Europe**, l’option Neige active les couleurs de phase de RainViewer, avec la légende de ce fournisseur. Les images de dix minutes sont animées en continu. Les tuiles RainViewer de 512 pixels sont assemblées, puis redimensionnées en une seule passe. Les trois modes placent le relief Mapzen sous les précipitations. Sur la carte suisse, la légende donne les neuf plages de couleur en mm/h. Le curseur de visibilité règle la transparence. La précision des observations reste celle de chaque source. Les reliefs, les fonds de carte et le radar nécessitent une connexion.
+Sur **Europe**, les observations de RainViewer sont espacées de dix minutes. Météo74 décode la réflectivité des tuiles originales à leur résolution native avant de convertir les valeurs en mm/h et de les interpoler. L’option Neige reprend le type identifié par le fournisseur. Si une couleur de phase est inconnue, l’intensité provient de la tuile sans distinction de phase. Un appui sur la carte affiche l’estimation à l’heure de l’observation choisie.
+
+Les trois cartes utilisent la même échelle à neuf seuils en mm/h, avec le même violet pour la neige probable. L’estimation en France et en Europe est un équivalent en eau déduit de la réflectivité radar. Deux sources peuvent observer des intensités différentes au même endroit. Le relief Mapzen se trouve sous les précipitations et le curseur règle leur opacité.
 
 ## Météo locale
 
@@ -41,7 +43,8 @@ L’accueil, les prévisions horaires et les dix prochains jours utilisent les p
 - [Open-Meteo / ICON-CH1 de MétéoSuisse](https://open-meteo.com/en/docs/meteoswiss-api) pour la limite pluie-neige. [Terrain Tiles de Mapzen](https://registry.opendata.aws/terrain-tiles/) pour l’altimétrie, consultée le 25 novembre 2026. Les [attributions par source](https://github.com/tilezen/joerd/blob/master/docs/attribution.md) détaillent notamment les contributions SRTM, USGS et GMTED.
 - [EUMETNET OPERA](https://www.eumetnet.eu/observations/weather-radar-network/) et Météo-France pour le composite de réflectivité DBZH, recadré, quantifié et colorisé sous [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Les [points de distribution](https://eumetnet.github.io/openradardata-documentation/2-ORD-API-discovering-and-accessing-data/) publient les observations.
 - [Contours administratifs IGN / Etalab](https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025/geojson/departements-100m.geojson), édition 2025 à 100 m, pour la limite de la Haute-Savoie, sous [Licence Ouverte](https://www.etalab.gouv.fr/licence-ouverte-open-licence/). Le nom de la commune actuelle provient de l’[API Découpage administratif](https://geo.api.gouv.fr/decoupage-administratif/communes) ou de [Photon](https://photon.komoot.io/) et OpenStreetMap.
-- [RainViewer](https://www.rainviewer.com/api/weather-maps-api.html) pour le radar Europe et [OpenStreetMap](https://www.openstreetmap.org/copyright) pour la cartographie.
+- [Relation réflectivité–intensité de Marshall–Palmer](https://www.weather.gov/tae/research-zrpaper) pour la conversion de la réflectivité en mm/h. [ICON-EU / Open-Meteo](https://open-meteo.com/en/docs/dwd-api) pour la limite pluie-neige en France.
+- [RainViewer](https://www.rainviewer.com/api/weather-maps-api.html) et sa [table d’encodage RGBA](https://www.rainviewer.com/api/color-schemes.html) pour le radar Europe et [OpenStreetMap](https://www.openstreetmap.org/copyright) pour la cartographie.
 - [Leaflet](https://leafletjs.com/), [Proj4js](https://github.com/proj4js/proj4js) et [jsfive](https://github.com/usnistgov/jsfive) sont embarqués avec leurs licences dans `app/src/main/assets/web/vendor/`.
 
 Les sources graphiques se trouvent dans `artwork/originaux` et `artwork/masters`. Pour régénérer la collection, exécuter `node artwork/prepare-icons.cjs` avec Node.js et sharp. Les images finales sont déjà intégrées à l’application.

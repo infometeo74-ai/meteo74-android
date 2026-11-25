@@ -1,3 +1,13 @@
+# Météo74 0.4.1
+
+25 novembre 2026. Le paquet Android signé `fr.meteo74.android` porte le numéro 9 et le même certificat que la version 0.4.0. L’APK mesure 4 620 669 octets. SHA-256 `4f694cea6ca7c3ecc34f5fa6a29a7b8480c9b07fa0c7703c2c7814de1363180d`. Les 82 fichiers de l’interface embarquée correspondent aux sources et l’alignement ZIP est validé.
+
+Les 26 tests passent. Les tests de palette comparent la pluie et la neige aux neuf seuils suisses. Ils vérifient cinq intensités de 10 à 50 dBZ, le traitement des pixels transparents et le calcul des valeurs entre deux cellules. Android Lint signale zéro erreur et cinq avertissements.
+
+Dans Chromium au format mobile, les trois zones ont chargé des observations réelles avec la même légende. La lecture de l’intensité au toucher a fonctionné sur les radars français et européen. Les essais couvrent les deux modes avec et sans distinction de la neige. En portrait sur un écran de 393 pixels, la France continentale occupe 96 % de la largeur de la carte. Le cadrage et le recentrage ont aussi été contrôlés en 320 × 680, 600 × 950 et 835 × 393. L’essai visuel a été réalisé sur navigateur mobile simulé.
+
+Le service de mise à jour propose la version 0.4.1. Les téléchargements depuis le service utilisé par l’application et le lien public GitHub ont renvoyé exactement le même APK que le fichier signé. La reprise sur un intervalle de 1 024 octets a renvoyé HTTP 206, un intervalle hors fichier 416 et la voie temporaire de publication est fermée.
+
 # Météo74 0.4.0
 
 25 novembre 2026

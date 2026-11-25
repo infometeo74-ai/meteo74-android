@@ -1,6 +1,7 @@
 /* Terrain and radar frames are prepared once per map view, away from playback. */
 (function (root) {
 'use strict';
+const colors=root.RadarColors||require('./radar-colors.js');
 const world = 256;
 const missing = 65535;
 const trackingSize = 40;
@@ -46,36 +47,6 @@ function tileLayout(v,z) {
     }
     return {left,top,width,height,tiles};
 }
-// The map and its legend use the same intensity intervals (mm/h).
-const intensityBands=[
-    {from:0,  rain:'#60c5e0',snow:'#c6a1ea'},
-    {from:.1, rain:'#329fdb',snow:'#b282e1'},
-    {from:.3, rain:'#177cc8',snow:'#a166d2'},
-    {from:1,  rain:'#079b9d',snow:'#904dc5'},
-    {from:2,  rain:'#2a9c58',snow:'#803aad'},
-    {from:5,  rain:'#efba2e',snow:'#702e99'},
-    {from:10, rain:'#ea7926',snow:'#612281'},
-    {from:20, rain:'#d54140',snow:'#521b70'},
-    {from:50, rain:'#aa1d50',snow:'#431456'}
-];
-function palette(kind) {
-    const table=new Uint8Array(12001*4);
-    const colors=intensityBands.map(band=>[1,3,5].map(start=>parseInt(band[kind].slice(start,start+2),16)));
-    table.set(colors[0]); // A genuinely dry sample has zero alpha.
-    let band=0;
-    for(let i=1;i<=12000;i++){
-        const rate=i/100;
-        while(band+1<intensityBands.length&&rate>=intensityBands[band+1].from)band++;
-        const next=Math.min(band+1,intensityBands.length-1);
-        const t=next===band?0:(rate-intensityBands[band].from)/(intensityBands[next].from-intensityBands[band].from);
-        // Most of an interval retains its own hue; a short ramp softens the isoline.
-        const blend=.12*t+.88*limit((t-.86)/.14,0,1);
-        for(let c=0;c<3;c++)table[4*i+c]=Math.round(mix(colors[band][c],colors[next][c],blend));
-        table[4*i+3]=Math.round(140+105*Math.min(1,rate/.10));
-    }
-    return table;
-}
-const rainColors=palette('rain'),snowColors=palette('snow');
 function gridCoordinates(frame,v) {
     // Interpolate the map projection over short screen segments, then sample the meteorological grid at cell centres.
     const {w,h}=v,scale=world*2**v.z,index=new Int32Array(w*h),fx=new Float32Array(w*h),fy=new Float32Array(w*h);
@@ -97,8 +68,14 @@ function sampledRate(frame,coord,i) {
     const k=coord.index[i];if(k<0)return -1;
     const x=coord.fx[i],y=coord.fy[i],w=frame.width,d=frame.values, absent=frame.missing??missing;
     const a=d[k],b=d[k+1],c=d[k+w],e=d[k+w+1];
-    if(a!==absent&&b!==absent&&c!==absent&&e!==absent)return mix(mix(a,b,x),mix(c,e,x),y);
-    const near=d[k+(x>=.5?1:0)+(y>=.5?w:0)]; return near===absent ? -1 : near;
+    const table=frame.rateTable;
+    if(a!==absent&&b!==absent&&c!==absent&&e!==absent){
+        if(table)return mix(mix(table[a],table[b],x),mix(table[c],table[e],x),y);
+        return mix(mix(a,b,x),mix(c,e,x),y);
+    }
+    const near=d[k+(x>=.5?1:0)+(y>=.5?w:0)];
+    if(near===absent)return -1;
+    return table?table[near]:near;
 }
 function tracking(field,w,h) {
     const small=new Float32Array(trackingSize*trackingSize);
@@ -157,11 +134,11 @@ function coverageBounds(frame) {
     }
     return {west:Math.min(...positions.map(p=>p[0])),east:Math.max(...positions.map(p=>p[0])),south:Math.min(...positions.map(p=>p[1])),north:Math.max(...positions.map(p=>p[1]))};
 }
-function modelGrid(v,coverage) {
+function modelGrid(v,coverage,intervals=4) {
     const b=corners(v);
     if(coverage){b.west=Math.max(b.west,coverage.west);b.east=Math.min(b.east,coverage.east);b.south=Math.max(b.south,coverage.south);b.north=Math.min(b.north,coverage.north);}
     if(b.west>=b.east||b.south>=b.north)return null;
-    const extent=Math.max(b.east-b.west,b.north-b.south),step=[.125,.25,.5,1,2,4,8,16,32].find(n=>n*4>=extent)??64;
+    const extent=Math.max(b.east-b.west,b.north-b.south),step=[.125,.25,.5,1,2,4,8,16,32].find(n=>n*intervals>=extent)??64;
     const west=Math.floor(b.west/step)*step,south=Math.floor(b.south/step)*step;
     const nx=Math.max(2,Math.ceil((b.east-west)/step)+1),ny=Math.max(2,Math.ceil((b.north-south)/step)+1),nodes=[];
     for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)nodes.push({lat:south+j*step,lon:west+i*step});
@@ -213,21 +190,23 @@ function engine(emit) {
         ctx.putImageData(pixels,0,0);const image=bitmap(node);emit({type:'terrain',id:v.id,image,complete:v.terrainOK},[image]);
     }
     async function loadModel(v,data) {
-        const grid=modelGrid(v,coverageBounds(data));if(!grid)return;
-        const day=t=>new Date(t*1000).toISOString().slice(0,10),start=day(v.firstTime-3600),end=day(v.lastTime+3600),key=n=>Math.floor(v.lastTime/3600)+'/'+start+'/'+end+'/'+n.lat+'/'+n.lon;
+        const french=v.provider==='france',model=french?'icon_eu':'meteoswiss_icon_ch1';
+        const grid=modelGrid(v,coverageBounds(data),french?8:4);if(!grid)return;
+        const day=t=>new Date(t*1000).toISOString().slice(0,10),start=day(v.firstTime-3600),end=day(v.lastTime+3600),key=n=>model+'/'+Math.floor(v.lastTime/3600)+'/'+start+'/'+end+'/'+n.lat+'/'+n.lon;
         const need=grid.nodes.filter(n=>!modelNodes.has(key(n)));
-        if(need.length){
-            const params=new URLSearchParams({latitude:need.map(n=>n.lat).join(','),longitude:need.map(n=>n.lon).join(','),models:'meteoswiss_icon_ch1',hourly:'snowfall_height',timeformat:'unixtime',timezone:'GMT',start_date:start,end_date:end,cell_selection:'nearest'});
+        for(let offset=0;offset<need.length;offset+=35){
+            const batch=need.slice(offset,offset+35);
+            const params=new URLSearchParams({latitude:batch.map(n=>n.lat).join(','),longitude:batch.map(n=>n.lon).join(','),models:model,hourly:'snowfall_height',timeformat:'unixtime',timezone:'GMT',start_date:start,end_date:end,cell_selection:'nearest'});
             const data=await request('https://api.open-meteo.com/v1/forecast?'+params,v.signal,'json'),rows=Array.isArray(data)?data:[data];
-            for(let i=0;i<need.length;i++){
-                const row=rows[i],n=need[i];if(!row||row.hourly_units?.snowfall_height!=='m'||Math.abs(row.latitude-n.lat)>.1||Math.abs(row.longitude-n.lon)>.15)continue;
+            for(let i=0;i<batch.length;i++){
+                const row=rows[i],n=batch[i];if(!row||row.hourly_units?.snowfall_height!=='m'||Math.abs(row.latitude-n.lat)>.1||Math.abs(row.longitude-n.lon)>.15)continue;
                 remember(modelNodes,key(n),row,180);
             }
         }
         grid.rows=grid.nodes.map(n=>modelNodes.get(key(n)));v.model=grid;
     }
     function prepare(options) {
-        view?.ctl.abort(); const ctl=new AbortController();const v={...options,ctl,signal:ctl.signal,tracks:new Map()};view=v;
+        view?.ctl.abort(); const ctl=new AbortController();const v={...options,ctl,signal:ctl.signal,tracks:new Map(),samples:new Map()};view=v;
         const scale=world*2**v.z;v.lon=Float64Array.from({length:v.w},(_,i)=>longitude((v.left+(i+.5)*v.cssW/v.w)/scale));v.lat=Float64Array.from({length:v.h},(_,i)=>latitude((v.top+(i+.5)*v.cssH/v.h)/scale));
         v.relief=terrain(v).catch(()=>{if(!v.signal.aborted)emit({type:'terrainError',id:v.id});});
 
@@ -239,93 +218,133 @@ function engine(emit) {
         for(let i=0;i<packed.length;i++)packed[i]=Number.isFinite(data.values[i])?limit(Math.round(data.values[i]*100),0,65534):missing;
         data.values=packed;return remember(frames,frame.url,data,27);
     }
-    async function swiss(frame,v) {
-        const data=await loadSwiss(frame,v);aborted(v.signal);
-        if(v.snow){v.modelJob??=loadModel(v,data).catch(()=>{});await Promise.all([v.modelJob,v.relief]);aborted(v.signal);}
+    async function loadFrance(frame,v){
+        if(frames.has(frame.url))return frames.get(frame.url);
+        const raw=await request(frame.url,v.signal,'arrayBuffer',FranceRadar.headers);aborted(v.signal);
+        return remember(frames,frame.url,FranceRadar.decode(raw,root.proj4),28);
+    }
+    async function observedFrame(frame,v){
+        const french=v.provider==='france';
+        const data=await (french?loadFrance:loadSwiss)(frame,v);aborted(v.signal);
+        if(v.snow){
+            v.modelJob??=loadModel(v,data).catch(()=>{});
+            await Promise.all([v.modelJob,v.relief]);aborted(v.signal);
+        }
         if(v.gridKey!==data.key){v.coord=gridCoordinates(data,v);v.gridKey=data.key;}
-        const levels=v.model?.rows.map(row=>clockSample(row,frame.time));const snow=!!(v.snow&&levels&&v.heights);
+        const levels=v.model?.rows.map(row=>clockSample(row,frame.time));
+        const modelAvailable=!!(v.snow&&levels&&v.heights);
         const node=canvas(v.w,v.h),ctx=node.getContext('2d'),pixels=ctx.createImageData(v.w,v.h),rgba=pixels.data;
         let known=0,wet=0;
-        for(let y=0;y<v.h;y++) for(let x=0;x<v.w;x++){
-            const i=y*v.w+x,k=i*4,rate=sampledRate(data,v.coord,i);
-            if(rate<0){if((x+y)%13<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=70;}continue;}
-            if(rate<=0)continue; wet++; let colors=rainColors;
-            if(snow){const elevation=v.heights[i],line=modelAt(levels,v.model,v.lon[x],v.lat[y]);if(Number.isFinite(elevation)&&Number.isFinite(line)){known++;if(elevation>=line)colors=snowColors;}}
-            const value=limit(rate,0,12000),lo=Math.min(11999,Math.floor(value)),p=4*lo,t=value-lo;
-            for(let channel=0;channel<4;channel++)rgba[k+channel]=mix(colors[p+channel],colors[p+4+channel],t);
-        }
-        const track=tracking(i=>{const rate=sampledRate(data,v.coord,i);return rate<0?-1:Math.log1p(rate*.025);},v.w,v.h);
-        ctx.putImageData(pixels,0,0);const phaseReady=!v.snow||(snow&&levels.some(Number.isFinite)&&v.terrainOK&&(wet===0||known===wet));
-        return {image:bitmap(node),track,phaseReady};
-    }
-    async function france(frame,v) {
-        let data=frames.get(frame.url);
-        if(!data){
-            const raw=await request(frame.url,v.signal,'arrayBuffer',FranceRadar.headers);aborted(v.signal);
-            data=remember(frames,frame.url,FranceRadar.decode(raw,root.proj4),28);
-        }
-        if(v.gridKey!==data.key){v.coord=gridCoordinates(data,v);v.gridKey=data.key;}
-        const colors=intensityBands.map(b=>[1,3,5].map(k=>parseInt(b.rain.slice(k,k+2),16)));
-        const node=canvas(v.w,v.h),ctx=node.getContext('2d'),pixels=ctx.createImageData(v.w,v.h),rgba=pixels.data;
-        const table=new Uint8Array(256*4), thresholds=FranceRadar.bands;
-        let band=0;
-        for(let raw=1;raw<255;raw++){
-            const z=FranceRadar.dbz(raw);if(z<thresholds[0])continue;
-            while(band+1<thresholds.length&&z>=thresholds[band+1])band++;
-            const next=Math.min(band+1,thresholds.length-1);
-            const t=next===band?0:(z-thresholds[band])/(thresholds[next]-thresholds[band]);
-            for(let c=0;c<3;c++)table[4*raw+c]=Math.round(mix(colors[band][c],colors[next][c],t));
-            table[4*raw+3]=Math.round(155+90*limit((z-5)/12,0,1));
-        }
-        for(let i=0;i<v.w*v.h;i++){
-            const code=sampledRate(data,v.coord,i),k=4*i;
-            if(code<0){
-                if(v.coord.index[i]>=0&&(i%v.w+Math.floor(i/v.w))%13<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=65;}
+        for(let y=0;y<v.h;y++)for(let x=0;x<v.w;x++){
+            const i=y*v.w+x,k=4*i,rate=sampledRate(data,v.coord,i);
+            if(rate<0){
+                if((!french||v.coord.index[i]>=0)&&(x+y)%13<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=70;}
                 continue;
             }
-            const p=4*Math.round(code);
-            rgba[k]=table[p];rgba[k+1]=table[p+1];rgba[k+2]=table[p+2];rgba[k+3]=table[p+3];
+            if(rate===0)continue;
+            wet++;let snowy=false;
+            if(modelAvailable){
+                const elevation=v.heights[i],line=modelAt(levels,v.model,v.lon[x],v.lat[y]);
+                if(Number.isFinite(elevation)&&Number.isFinite(line)){known++;snowy=elevation>=line;}
+            }
+            colors.paint(rgba,k,rate,snowy);
         }
-        const track=tracking(i=>{const code=sampledRate(data,v.coord,i);return code<0?-1:Math.max(0,FranceRadar.dbz(code)-4)/22;},v.w,v.h);
+        const track=tracking(i=>{const rate=sampledRate(data,v.coord,i);return rate<0?-1:Math.log1p(rate*.025);},v.w,v.h);
         ctx.putImageData(pixels,0,0);
-        return {image:bitmap(node),track,phaseReady:true};
+        const phaseReady=!v.snow||(modelAvailable&&levels.some(Number.isFinite)&&v.terrainOK&&known===wet);
+        return {image:bitmap(node),track,phaseReady};
     }
     async function europeanTile(url,signal){
         if(euroTiles.has(url))return euroTiles.get(url);
-        // Count requests on this device over a rolling minute, including rapid pans and source changes.
-        while(true){aborted(signal);const now=Date.now();while(euroRequests.length&&now-euroRequests[0]>=60000)euroRequests.shift();if(euroRequests.length<90){euroRequests.push(now);break;}await new Promise(r=>setTimeout(r,Math.min(500,60000-now+euroRequests[0])));}
-        const img=await loadImage(url,signal);aborted(signal);return remember(euroTiles,url,img,24);
-    }
-    async function europe(frame,v) {
-        let z=Math.min(7,Math.floor(v.z));while(z>1&&tileLayout(v,z).tiles.length>6)z--;
-        const l=tileLayout(v,z),node=canvas(v.w,v.h),ctx=node.getContext('2d',{willReadFrequently:true});
-        ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='low';
-        // Request native 512 px tiles without provider blur; resample the assembled mosaic only once.
-        const tilePixels=512,ratio=tilePixels/world;
-        const left=Math.floor(l.left/256),top=Math.floor(l.top/256),cols=Math.ceil((l.left+l.width)/256)-left,rows=Math.ceil((l.top+l.height)/256)-top;
-        const mosaic=canvas(cols*tilePixels,rows*tilePixels),mc=mosaic.getContext('2d');let received=0;
-        await Promise.all(l.tiles.map(async t=>{
-            try{
-                const url=frame.url+'/'+tilePixels+'/'+t.key+'/2/0_'+(v.snow?'1':'0')+'.png';
-                const tile=await europeanTile(url,v.signal);
-                mc.drawImage(tile,(t.x-left)*tilePixels,(t.y-top)*tilePixels,tilePixels,tilePixels);received++;
-            }catch{}
-        }));aborted(v.signal);
-        if(received!==l.tiles.length||!received)throw Error('Tuiles radar incomplètes');
-        ctx.drawImage(mosaic,(l.left-left*world)*ratio,(l.top-top*world)*ratio,l.width*ratio,l.height*ratio,0,0,v.w,v.h);
-        const pixels=ctx.getImageData(0,0,v.w,v.h).data;
-        const track=tracking(i=>{const k=i*4;return pixels[k+3]/255*(1+(pixels[k]+255-pixels[k+1])/320);},v.w,v.h);
-        return {image:bitmap(node),track,phaseReady:true};
-    }
-    function sample(m,v) {
-        const data=frames.get(m.frame.url);let rate=null,phase=null;
-        if(v.provider==='france'){
-            const value=data?SwissRadar.valueAt(data,m.lon,m.lat):NaN;
-            emit({type:'sample',id:v.id,token:m.token,time:m.frame.time,dbz:Number.isFinite(value)&&value>0&&value<255?FranceRadar.dbz(value):null,dry:value===0});
-            return;
+        // Keep all European requests, including mixed-phase fallbacks, within the rolling device budget.
+        while(true){
+            aborted(signal);const now=Date.now();
+            while(euroRequests.length&&now-euroRequests[0]>=60000)euroRequests.shift();
+            if(euroRequests.length<90){euroRequests.push(now);break;}
+            await new Promise(r=>setTimeout(r,Math.min(500,60000-now+euroRequests[0])));
         }
-        if(data){const value=SwissRadar.valueAt(data,m.lon,m.lat);if(Number.isFinite(value)&&value!==missing)rate=value/100;}
-        if(v.snow&&rate>0&&v.model&&v.heights){const levels=v.model.rows.map(row=>clockSample(row,m.frame.time)),line=modelAt(levels,v.model,m.lon,m.lat),alt=v.heights[limit(Math.floor(m.y*v.h),0,v.h-1)*v.w+limit(Math.floor(m.x*v.w),0,v.w-1)];if(Number.isFinite(line)&&Number.isFinite(alt))phase=alt>=line?'Neige probable':'Pluie probable';}
+        const img=await loadImage(url,signal);
+        try{
+            aborted(signal);
+            if(img.width!==512||img.height!==512)throw Error('Taille de tuile inattendue');
+            const tile=canvas(512,512),ctx=tile.getContext('2d',{willReadFrequently:true});
+            ctx.drawImage(img,0,0);
+            return remember(euroTiles,url,EuropeRadar.decode(ctx.getImageData(0,0,512,512).data),64);
+        }finally{img.close?.();}
+    }
+    function europeanGeometry(v){
+        let z=Math.min(7,Math.floor(v.z));
+        while(z>1&&tileLayout(v,z).tiles.length>6)z--;
+        const layout=tileLayout(v,z),left=Math.floor(layout.left/world),top=Math.floor(layout.top/world);
+        const width=(Math.ceil((layout.left+layout.width)/world)-left)*512;
+        const height=(Math.ceil((layout.top+layout.height)/world)-top)*512;
+        const near=new Int32Array(v.w*v.h),index=new Int32Array(v.w*v.h),fx=new Float32Array(v.w*v.h),fy=new Float32Array(v.w*v.h);
+        const gx=new Float64Array(v.w);
+        for(let x=0;x<v.w;x++)gx[x]=limit((layout.left-left*world+(x+.5)*layout.width/v.w)*2-.5,0,width-1);
+        for(let y=0;y<v.h;y++){
+            const gy=limit((layout.top-top*world+(y+.5)*layout.height/v.h)*2-.5,0,height-1),iy=Math.min(height-2,Math.floor(gy));
+            for(let x=0;x<v.w;x++){
+                const i=y*v.w+x,ix=Math.min(width-2,Math.floor(gx[x]));
+                near[i]=Math.round(gy)*width+Math.round(gx[x]);index[i]=iy*width+ix;fx[i]=gx[x]-ix;fy[i]=gy-iy;
+            }
+        }
+        return {left,top,width,height,tiles:layout.tiles,near,coord:{index,fx,fy}};
+    }
+    async function europe(frame,v){
+        const geo=v.euroGeometry??=europeanGeometry(v);
+        const values=new Uint8Array(geo.width*geo.height).fill(EuropeRadar.unknown);
+        let unresolvedPhase;
+        await Promise.all(geo.tiles.map(async t=>{
+            const prefix=frame.url+'/512/'+t.key+'/2/0_';
+            const tile=await europeanTile(prefix+(v.snow?'1':'0')+'.png',v.signal);
+            const start=(t.y-geo.top)*512*geo.width+(t.x-geo.left)*512;
+            for(let y=0;y<512;y++)values.set(tile.values.subarray(y*512,(y+1)*512),start+y*geo.width);
+            // Preserve the intensity of mixed or undocumented phases via the phase-free tile.
+            // If that tile is unavailable, the other radar observations can still play.
+            if(tile.hasUnknown&&v.snow){
+                let intensity;
+                try{intensity=await europeanTile(prefix+'0.png',v.signal);}catch{aborted(v.signal);}
+                unresolvedPhase??=new Uint8Array(values.length);
+                for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+                    const i=y*512+x;
+                    if(tile.values[i]!==EuropeRadar.unknown)continue;
+                    const target=start+y*geo.width+x;
+                    unresolvedPhase[target]=1;
+                    if(intensity)values[target]=intensity.values[i];
+                }
+            }
+        }));aborted(v.signal);
+        const data={width:geo.width,values,missing:EuropeRadar.unknown,rateTable:EuropeRadar.rates};
+        const node=canvas(v.w,v.h),ctx=node.getContext('2d'),pixels=ctx.createImageData(v.w,v.h),sample=new Uint8Array(v.w*v.h);
+        let phaseReady=true;
+        for(let i=0;i<sample.length;i++){
+            const pos=geo.near[i],code=sample[i]=values[pos],rate=sampledRate(data,geo.coord,i);
+            if(unresolvedPhase?.[pos])phaseReady=false;
+            if(rate>0)colors.paint(pixels.data,4*i,rate,!!(code&EuropeRadar.snowFlag));
+        }
+        remember(v.samples,frame.time,sample,16);
+        const track=tracking(i=>{const rate=sampledRate(data,geo.coord,i);return rate<0?-1:Math.log1p(rate*.025);},v.w,v.h);
+        ctx.putImageData(pixels,0,0);
+        return {image:bitmap(node),track,phaseReady};
+    }
+    function sample(m,v){
+        let rate=null,phase=null;
+        const i=limit(Math.floor(m.y*v.h),0,v.h-1)*v.w+limit(Math.floor(m.x*v.w),0,v.w-1);
+        if(v.provider==='europe'){
+            const code=v.samples.get(m.frame.time)?.[i];
+            if(code!==undefined&&code!==EuropeRadar.unknown){
+                rate=EuropeRadar.rates[code]/100;
+                if(code&EuropeRadar.snowFlag)phase='Neige probable';
+            }
+        }else{
+            const data=frames.get(m.frame.url);
+            const raw=data?SwissRadar.valueAt(data,m.lon,m.lat):NaN;
+            if(Number.isFinite(raw)&&raw!==(data.missing??missing))rate=(data.rateTable?data.rateTable[raw]:raw)/100;
+            if(v.snow&&rate>0&&v.model&&v.heights){
+                const levels=v.model.rows.map(row=>clockSample(row,m.frame.time)),line=modelAt(levels,v.model,m.lon,m.lat),alt=v.heights[i];
+                if(Number.isFinite(line)&&Number.isFinite(alt))phase=alt>=line?'Neige probable':'Pluie probable';
+            }
+        }
         emit({type:'sample',id:v.id,token:m.token,rate,phase,time:m.frame.time});
     }
     async function handle(m) {
@@ -333,7 +352,7 @@ function engine(emit) {
         const v=view;if(!v||m.id!==v.id)return;
         if(m.type==='sample'){sample(m,v);return;}
         if(m.type==='frame')try{
-            const {image,track,phaseReady}=await ({swiss,france,europe}[v.provider])(m.frame,v);
+            const {image,track,phaseReady}=await (v.provider==='europe'?europe:observedFrame)(m.frame,v);
             if(v!==view||v.signal.aborted){image.close?.();return;}
             const time=m.frame.time,motions=[],maxGap=(v.provider==='europe'?600:300)*1.51;
             // Tracks can arrive out of order. Compute each adjacent match as its second input arrives.
@@ -349,6 +368,6 @@ function engine(emit) {
     }
     return handle;
 }
-root.RadarRender={engine,estimateMotion,clockSample,modelGrid,modelAt,coverageBounds,sampledRate,gridCoordinates,corners,trackingSize,intensityBands};
+root.RadarRender={engine,estimateMotion,clockSample,modelGrid,modelAt,coverageBounds,sampledRate,gridCoordinates,corners,trackingSize};
 if(typeof module==='object'&&module.exports)module.exports=root.RadarRender;
 })(globalThis);

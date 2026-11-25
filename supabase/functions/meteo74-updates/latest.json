@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 8,
-  "versionName": "0.4.0",
-  "file": "Meteo74-0.4.0.apk",
-  "size": 4617785,
-  "sha256": "adfa8e1f08ba4d9f1d9fb3072df1571c99422f14f6e8377f4b94c47410e7c842",
-  "notes": "Grandes tuiles de villes avec prévisions détaillées, favori Ma position pendant les déplacements, radar France animé toutes les cinq minutes et contour de la Haute-Savoie."
+  "versionCode": 9,
+  "versionName": "0.4.1",
+  "file": "Meteo74-0.4.1.apk",
+  "size": 4620669,
+  "sha256": "4f694cea6ca7c3ecc34f5fa6a29a7b8480c9b07fa0c7703c2c7814de1363180d",
+  "notes": "Le radar France s’ouvre plus près de l’Hexagone. Les trois radars partagent les couleurs et les seuils en mm/h de Suisse & Alpes. Touchez la carte pour lire l’intensité. L’option Neige est aussi disponible en France."
 }

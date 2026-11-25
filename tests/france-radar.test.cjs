@@ -20,6 +20,7 @@ test('France decodes georeferenced reflectivity and distinguishes dry from missi
     assert.equal(d.x0,1649000);assert.equal(d.y0,-3080000);
     const at=(fx,fy)=>render.sampledRate(d,{index:[0],fx:[fx],fy:[fy]},0);
     assert.equal(at(0,0),0);assert.equal(at(1,0),-1);
-    assert.equal(radar.dbz(at(0,1)),20);
+    assert.equal(radar.dbz(d.values[2]),20);
+    assert.equal(at(0,1),65); // 20 dBZ yields 0.65 mm/h before interpolation.
     assert.throws(()=>radar.decode(b.slice(0,19),proj4));
 });
