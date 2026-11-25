@@ -1,14 +1,13 @@
 /* Open 1 km OPERA reflectivity observations produced by Météo-France / EUMETNET. */
 (function(root){
 'use strict';
-const service='https://bepcgggpdtxwaifiyrah.supabase.co/functions/v1/meteo74-radar-france';
-// Public anonymous key of this app's independent Supabase project.
-const anon='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJlcGNnZ2dwZHR4d2FpZml5cmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1OTg5NTksImV4cCI6MjExMTE3NDk1OX0.qRCXb7lLdpZT6seIgmQ7jTRCgaPirbHSorYvrxnebwk';
+const backend=root.MeteoService||require('./service.js');
+const service=backend.base+'meteo74-radar-france';
 const colors=root.RadarColors||require('./radar-colors.js');
 const dbz=code=>(code-1)/2-32;
 const rateTable=new Uint16Array(256);
 for(let code=1;code<255;code++)rateTable[code]=colors.reflectivityRate(dbz(code));
-const headers={apikey:anon,Authorization:'Bearer '+anon};
+const headers=backend.headers;
 const projection='+proj=laea +lat_0=55 +lon_0=10 +x_0=1950000 +y_0=-2100000 +units=m +ellps=WGS84';
 async function loadFrames(fetchJSON,signal){
     const {times}=await fetchJSON(service+'/frames',signal,22000,headers);

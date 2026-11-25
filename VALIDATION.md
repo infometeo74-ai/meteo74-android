@@ -1,3 +1,13 @@
+# Météo74 0.5.0
+
+25 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 10. Le fichier signé contient 4 635 158 octets. SHA-256 `bfe23083cdba173bbc592a08a7df8933bde4b0994d2ab299531f2d0861141064`. Le certificat correspond à celui de la version 0.4.1. Les 86 fichiers de l’interface embarquée correspondent aux sources. Le contrôle d’alignement ZIP passe.
+
+Les 30 tests passent. Ils couvrent le catalogue alpin et nordique, la recherche par secteur et sans accents, la correspondance entre altitude et coordonnées, l’expiration d’un bulletin et la distinction entre une donnée absente et une mesure nulle. Android Lint rapporte zéro erreur et cinq avertissements.
+
+Les essais dans Chromium mobile ont porté sur l’accès sans ville enregistrée, les favoris existants, l’ajout et le retrait du dernier lieu, les recherches, le retour depuis une fiche et les données en cache. Les deux points de prévision d’Argentière, les chiffres du bulletin de Passy et la date de l’ancien bulletin des Glières ont été contrôlés avec les services en ligne. La mise en page a été vérifiée sur des largeurs de 320, 393 et 600 pixels.
+
+Le manifeste diffusé par la mise à jour intégrée annonce la version 0.5.0. Les téléchargements depuis le service Météo74 et le lien public GitHub ont renvoyé l’empreinte du fichier signé. Les réponses HTTP 206 pour une reprise et 416 pour un intervalle hors fichier ont été vérifiées.
+
 # Météo74 0.4.1
 
 25 novembre 2026. Le paquet Android signé `fr.meteo74.android` porte le numéro 9 et le même certificat que la version 0.4.0. L’APK mesure 4 620 669 octets. SHA-256 `4f694cea6ca7c3ecc34f5fa6a29a7b8480c9b07fa0c7703c2c7814de1363180d`. Les 82 fichiers de l’interface embarquée correspondent aux sources et l’alignement ZIP est validé.

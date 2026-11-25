@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.4.1 · 25 novembre 2026 · `fr.meteo74.android`
+Version 0.5.0 · 25 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.4.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.4.1.apk)
+[Télécharger Météo74 0.5.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.5.0.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -12,9 +12,19 @@ Pour une première installation sur Android 7 ou plus récent, ouvre le lien dep
 
 ## Accueil et favoris
 
-Une grande tuile par lieu présente la température, le pictogramme, le ressenti, le vent, l’humidité et les extrêmes du jour. La liste défile verticalement. Toucher une tuile ouvre le détail, les prochaines heures et les prévisions à dix jours. Au premier lancement, et après la suppression du dernier favori, l’accueil propose **Ma position** et **Ajouter une ville**. L’onglet **Favoris** permet de gérer la liste.
+Une grande tuile par lieu présente la température, le pictogramme, le ressenti, le vent, l’humidité et les extrêmes du jour. La liste défile verticalement. Toucher une tuile ouvre le détail, les prochaines heures et les prévisions à dix jours. Au premier lancement, et après la suppression du dernier favori, l’accueil propose **Ma position** et **Ajouter une ville**. Sur l’accueil, **Ajouter une ville** ouvre la recherche et **Gérer** permet de retirer une ville ou la position suivie.
 
 **Ma position** figure également dans le sélecteur. Elle occupe une seule tuile. La localisation démarre sur demande, suit les déplacements pendant l’utilisation et reprend au retour dans l’application. Les communes précédemment enregistrées restent disponibles après la mise à jour. La source Open-Meteo est indiquée une fois pour la liste.
+
+## Neige et stations
+
+L’onglet **Neige** réunit 40 stations et accès de ski alpin et 22 sites de ski de fond en Haute-Savoie. Les six secteurs géographiques se déplient et la recherche accepte aussi le nom d’un domaine ou d’un secteur. Cet onglet fonctionne dès le premier lancement, même quand aucune commune n’a encore été choisie.
+
+Chaque fiche associe la météo du point sélectionné et cinq jours de prévisions. Les 46 remontées de référence fournissent les coordonnées et altitudes des points de départ et d’arrivée. Chamonix, Manigod, Praz de Lys–Sommand et Saint-Gervais proposent plusieurs secteurs. Pour le ski de fond, le nom du repère météo figure dans la fiche.
+
+La fonction **meteo74-neige** consulte les bulletins publiés par les domaines, les offices de tourisme et Haute-Savoie Nordic. Elle prend en charge 28 fiches alpines et 21 nordiques. Les totaux disponibles précisent leur périmètre. Les informations d’ouverture d’un bulletin de plus de trois jours sont masquées. En l’absence de mesure récente, la fiche identifie explicitement la hauteur de neige estimée au point météo. La colonne « Neige prévue » indique la neige fraîche attendue pendant la journée. Chaque fiche donne accès à l’information du domaine et les widgets officiels disponibles se chargent à la demande.
+
+Les températures des stations visibles sont chargées par lots. Les fiches consultées restent disponibles hors connexion avec la date de leurs données. Les sites nordiques et les repères alpins sont documentés dans le pied de page de l’onglet. [Inventaire des domaines skiables de la DDT 74](https://www.data.gouv.fr/datasets/ensemble-des-donnees-sur-les-domaines-skiables-alpins-de-haute-savoie) · [Haute-Savoie Nordic](https://www.haute-savoie-nordic.com/ou-pratiquer/)
 
 ## Radar
 

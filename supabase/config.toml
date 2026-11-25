@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.meteo74-radar-france]
 verify_jwt = true
+
+[functions.meteo74-neige]
+verify_jwt = true

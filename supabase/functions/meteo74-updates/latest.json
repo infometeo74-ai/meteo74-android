@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 9,
-  "versionName": "0.4.1",
-  "file": "Meteo74-0.4.1.apk",
-  "size": 4620669,
-  "sha256": "4f694cea6ca7c3ecc34f5fa6a29a7b8480c9b07fa0c7703c2c7814de1363180d",
-  "notes": "Le radar France s’ouvre plus près de l’Hexagone. Les trois radars partagent les couleurs et les seuils en mm/h de Suisse & Alpes. Touchez la carte pour lire l’intensité. L’option Neige est aussi disponible en France."
+  "versionCode": 10,
+  "versionName": "0.5.0",
+  "file": "Meteo74-0.5.0.apk",
+  "size": 4635158,
+  "sha256": "bfe23083cdba173bbc592a08a7df8933bde4b0994d2ab299531f2d0861141064",
+  "notes": "Nouvel onglet Neige : 40 stations et accès alpins, 22 sites de ski de fond, prévisions par altitude, enneigement et pistes selon les bulletins des domaines. Les villes se gèrent depuis l’accueil."
 }
