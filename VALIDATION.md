@@ -1,3 +1,15 @@
+# Météo74 0.4.0
+
+25 novembre 2026
+
+Le paquet Android `fr.meteo74.android` porte le numéro 8. L’APK signé mesure 4 617 785 octets. SHA-256 `adfa8e1f08ba4d9f1d9fb3072df1571c99422f14f6e8377f4b94c47410e7c842`. Le certificat correspond à la version 0.3.4, l’alignement ZIP est correct et les 80 fichiers web embarqués correspondent aux sources.
+
+Les 22 tests automatisés sont passés. Android Lint relève zéro erreur et cinq avertissements. Sur Chromium en format mobile, les essais couvrent l’accueil vide, les anciens favoris, l’ajout et la suppression, le défilement, les prévisions horaires et à dix jours, le refus de localisation et le suivi simulé entre Reignier-Ésery et Annecy avec mise en pause et reprise. À 320, 393 et 600 pixels de largeur, les tuiles de ville ont respectivement les mêmes dimensions que la carte de la version 0.3.4 (292 × 329, 353 × 338 et 544 × 401 pixels CSS).
+
+Une vérification avec les données en ligne a chargé la météo d’Annecy, les catalogues des trois radars, animé des observations françaises et lu la réflectivité au toucher. Le contour et le masque s’affichent indépendamment des précipitations. La prise en main et la localisation sur un téléphone physique restent à confirmer.
+
+Le manifeste de mise à jour de Météo74 a renvoyé la version 0.4.0. Les téléchargements complets depuis Supabase et GitHub correspondent à l’empreinte ci-dessus. Un téléchargement partiel a renvoyé HTTP 206 avec les octets demandés, un intervalle hors fichier a renvoyé 416. L’accès de publication temporaire est fermé.
+
 # Météo74 0.3.4
 
 25 novembre 2026

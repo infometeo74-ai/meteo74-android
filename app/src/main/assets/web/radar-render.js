@@ -19,11 +19,11 @@ function canvas(width,height) {
     const node=document.createElement('canvas'); node.width=width; node.height=height; return node;
 }
 function bitmap(node) { return node.transferToImageBitmap ? node.transferToImageBitmap() : node; }
-async function request(url,signal,read) {
+async function request(url,signal,read,headers) {
     const ctl=new AbortController(), abort=()=>ctl.abort(); aborted(signal);
     signal.addEventListener('abort',abort,{once:true}); const timer=setTimeout(abort,18000);
     try {
-        const response=await fetch(url,{signal:ctl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
+        const response=await fetch(url,{headers,signal:ctl.signal,credentials:'omit',referrerPolicy:'no-referrer'});
         if(!response.ok) throw Error('Service indisponible ('+response.status+')');
         return await response[read]();
     } finally {clearTimeout(timer);signal.removeEventListener('abort',abort);}
@@ -95,10 +95,10 @@ function gridCoordinates(frame,v) {
 }
 function sampledRate(frame,coord,i) {
     const k=coord.index[i];if(k<0)return -1;
-    const x=coord.fx[i],y=coord.fy[i],w=frame.width,d=frame.values;
+    const x=coord.fx[i],y=coord.fy[i],w=frame.width,d=frame.values, absent=frame.missing??missing;
     const a=d[k],b=d[k+1],c=d[k+w],e=d[k+w+1];
-    if(a!==missing&&b!==missing&&c!==missing&&e!==missing)return mix(mix(a,b,x),mix(c,e,x),y);
-    const near=d[k+(x>=.5?1:0)+(y>=.5?w:0)]; return near===missing ? -1 : near;
+    if(a!==absent&&b!==absent&&c!==absent&&e!==absent)return mix(mix(a,b,x),mix(c,e,x),y);
+    const near=d[k+(x>=.5?1:0)+(y>=.5?w:0)]; return near===absent ? -1 : near;
 }
 function tracking(field,w,h) {
     const small=new Float32Array(trackingSize*trackingSize);
@@ -258,6 +258,38 @@ function engine(emit) {
         ctx.putImageData(pixels,0,0);const phaseReady=!v.snow||(snow&&levels.some(Number.isFinite)&&v.terrainOK&&(wet===0||known===wet));
         return {image:bitmap(node),track,phaseReady};
     }
+    async function france(frame,v) {
+        let data=frames.get(frame.url);
+        if(!data){
+            const raw=await request(frame.url,v.signal,'arrayBuffer',FranceRadar.headers);aborted(v.signal);
+            data=remember(frames,frame.url,FranceRadar.decode(raw,root.proj4),28);
+        }
+        if(v.gridKey!==data.key){v.coord=gridCoordinates(data,v);v.gridKey=data.key;}
+        const colors=intensityBands.map(b=>[1,3,5].map(k=>parseInt(b.rain.slice(k,k+2),16)));
+        const node=canvas(v.w,v.h),ctx=node.getContext('2d'),pixels=ctx.createImageData(v.w,v.h),rgba=pixels.data;
+        const table=new Uint8Array(256*4), thresholds=FranceRadar.bands;
+        let band=0;
+        for(let raw=1;raw<255;raw++){
+            const z=FranceRadar.dbz(raw);if(z<thresholds[0])continue;
+            while(band+1<thresholds.length&&z>=thresholds[band+1])band++;
+            const next=Math.min(band+1,thresholds.length-1);
+            const t=next===band?0:(z-thresholds[band])/(thresholds[next]-thresholds[band]);
+            for(let c=0;c<3;c++)table[4*raw+c]=Math.round(mix(colors[band][c],colors[next][c],t));
+            table[4*raw+3]=Math.round(155+90*limit((z-5)/12,0,1));
+        }
+        for(let i=0;i<v.w*v.h;i++){
+            const code=sampledRate(data,v.coord,i),k=4*i;
+            if(code<0){
+                if(v.coord.index[i]>=0&&(i%v.w+Math.floor(i/v.w))%13<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=65;}
+                continue;
+            }
+            const p=4*Math.round(code);
+            rgba[k]=table[p];rgba[k+1]=table[p+1];rgba[k+2]=table[p+2];rgba[k+3]=table[p+3];
+        }
+        const track=tracking(i=>{const code=sampledRate(data,v.coord,i);return code<0?-1:Math.max(0,FranceRadar.dbz(code)-4)/22;},v.w,v.h);
+        ctx.putImageData(pixels,0,0);
+        return {image:bitmap(node),track,phaseReady:true};
+    }
     async function europeanTile(url,signal){
         if(euroTiles.has(url))return euroTiles.get(url);
         // Count requests on this device over a rolling minute, including rapid pans and source changes.
@@ -287,6 +319,11 @@ function engine(emit) {
     }
     function sample(m,v) {
         const data=frames.get(m.frame.url);let rate=null,phase=null;
+        if(v.provider==='france'){
+            const value=data?SwissRadar.valueAt(data,m.lon,m.lat):NaN;
+            emit({type:'sample',id:v.id,token:m.token,time:m.frame.time,dbz:Number.isFinite(value)&&value>0&&value<255?FranceRadar.dbz(value):null,dry:value===0});
+            return;
+        }
         if(data){const value=SwissRadar.valueAt(data,m.lon,m.lat);if(Number.isFinite(value)&&value!==missing)rate=value/100;}
         if(v.snow&&rate>0&&v.model&&v.heights){const levels=v.model.rows.map(row=>clockSample(row,m.frame.time)),line=modelAt(levels,v.model,m.lon,m.lat),alt=v.heights[limit(Math.floor(m.y*v.h),0,v.h-1)*v.w+limit(Math.floor(m.x*v.w),0,v.w-1)];if(Number.isFinite(line)&&Number.isFinite(alt))phase=alt>=line?'Neige probable':'Pluie probable';}
         emit({type:'sample',id:v.id,token:m.token,rate,phase,time:m.frame.time});
@@ -296,9 +333,9 @@ function engine(emit) {
         const v=view;if(!v||m.id!==v.id)return;
         if(m.type==='sample'){sample(m,v);return;}
         if(m.type==='frame')try{
-            const {image,track,phaseReady}=await (v.provider==='swiss'?swiss:europe)(m.frame,v);
+            const {image,track,phaseReady}=await ({swiss,france,europe}[v.provider])(m.frame,v);
             if(v!==view||v.signal.aborted){image.close?.();return;}
-            const time=m.frame.time,motions=[],maxGap=(v.provider==='swiss'?300:600)*1.51;
+            const time=m.frame.time,motions=[],maxGap=(v.provider==='europe'?600:300)*1.51;
             // Tracks can arrive out of order. Compute each adjacent match as its second input arrives.
             for(const [other,field] of v.tracks){
                 if(time===other||Math.abs(time-other)>maxGap)continue;

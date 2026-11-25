@@ -1,14 +1,20 @@
 # Météo74 pour Android
 
-Version 0.3.4 · 25 novembre 2026 · `fr.meteo74.android`
+Version 0.4.0 · 25 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.3.4 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.3.4.apk)
+[Télécharger Météo74 0.4.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.4.0.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
 À partir de Météo74 0.3.4, ouvre **Paramètres → Rechercher une mise à jour**, puis **Télécharger**. La première fois, Android peut te demander l’autorisation d’installer la mise à jour. Le téléchargement fonctionne en Wi-Fi ou sur données mobiles et peut reprendre après une interruption. L’application vérifie le fichier et la signature de Météo74 avant d’ouvrir l’installateur Android.
+
+## Accueil et favoris
+
+Une grande tuile par lieu présente la température, le pictogramme, le ressenti, le vent, l’humidité et les extrêmes du jour. La liste défile verticalement. Toucher une tuile ouvre le détail, les prochaines heures et les prévisions à dix jours. Au premier lancement, et après la suppression du dernier favori, l’accueil propose **Ma position** et **Ajouter une ville**. L’onglet **Favoris** permet de gérer la liste.
+
+**Ma position** figure également dans le sélecteur. Elle occupe une seule tuile. La localisation démarre sur demande, suit les déplacements pendant l’utilisation et reprend au retour dans l’application. Les communes précédemment enregistrées restent disponibles après la mise à jour. La source Open-Meteo est indiquée une fois pour la liste.
 
 ## Radar
 
@@ -18,7 +24,11 @@ Sur **Suisse & Alpes**, l’application lit les observations PRECIP de MétéoSu
 
 Activer **Neige** pour distinguer en violet les précipitations probablement neigeuses sur le radar suisse. La limite pluie-neige horaire du modèle ICON-CH1 est interpolée à l’heure de chaque observation et comparée à l’altitude du terrain. Les couleurs représentent une intensité en équivalent eau. Si le modèle ou le terrain est indisponible, l’intensité reste visible et l’interface signale l’incertitude sur le type.
 
-Sur **Europe**, l’option Neige active les couleurs de phase de RainViewer, avec la légende de ce fournisseur. Les images de dix minutes sont animées en continu. Les tuiles RainViewer de 512 pixels sont assemblées, puis redimensionnées en une seule passe. Les deux cartes placent le relief Mapzen sous les précipitations. Sur la carte suisse, la légende donne les neuf plages de couleur en mm/h. Le curseur de visibilité règle la transparence. La précision des observations reste celle de chaque source. Les reliefs, les fonds de carte et le radar nécessitent une connexion.
+Le mode **France** utilise les réflectivités maximales du composite OPERA produit par Météo-France pour EUMETNET, avec les radars français et ceux des pays voisins. La grille de 1 km est recadrée sur la France métropolitaine, Corse comprise. Les observations espacées de cinq minutes utilisent le même lecteur que le radar alpin. La légende et la mesure au toucher sont en dBZ. Le produit français ne fournit pas le type pluie/neige. Le service public de Météo74 prépare la grille depuis les GeoTIFF officiels et la transmet comprimée au téléphone.
+
+Le contour de la Haute-Savoie suit le tracé IGN. L’extérieur du département est légèrement assombri sous la couche de précipitations. Les noms des communes proviennent du fond OpenStreetMap.
+
+Sur **Europe**, l’option Neige active les couleurs de phase de RainViewer, avec la légende de ce fournisseur. Les images de dix minutes sont animées en continu. Les tuiles RainViewer de 512 pixels sont assemblées, puis redimensionnées en une seule passe. Les trois modes placent le relief Mapzen sous les précipitations. Sur la carte suisse, la légende donne les neuf plages de couleur en mm/h. Le curseur de visibilité règle la transparence. La précision des observations reste celle de chaque source. Les reliefs, les fonds de carte et le radar nécessitent une connexion.
 
 ## Météo locale
 
@@ -29,6 +39,8 @@ L’accueil, les prévisions horaires et les dix prochains jours utilisent les p
 - [MétéoSuisse, produit PRECIP (RZC)](https://opendatadocs.meteoswiss.ch/d-radar-data/d1-precipitation-radar-products). Source des données et de l’échantillon de test HDF5 fourni sous [CC BY 4.0](https://opendatadocs.meteoswiss.ch/general/terms-of-use). Projection et palette adaptées par Météo74.
 - [Open-Meteo](https://open-meteo.com/en/docs) pour les températures modélisées et les prévisions. La [recherche géographique](https://open-meteo.com/en/docs/geocoding-api) utilise des données GeoNames.
 - [Open-Meteo / ICON-CH1 de MétéoSuisse](https://open-meteo.com/en/docs/meteoswiss-api) pour la limite pluie-neige. [Terrain Tiles de Mapzen](https://registry.opendata.aws/terrain-tiles/) pour l’altimétrie, consultée le 25 novembre 2026. Les [attributions par source](https://github.com/tilezen/joerd/blob/master/docs/attribution.md) détaillent notamment les contributions SRTM, USGS et GMTED.
+- [EUMETNET OPERA](https://www.eumetnet.eu/observations/weather-radar-network/) et Météo-France pour le composite de réflectivité DBZH, recadré, quantifié et colorisé sous [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Les [points de distribution](https://eumetnet.github.io/openradardata-documentation/2-ORD-API-discovering-and-accessing-data/) publient les observations.
+- [Contours administratifs IGN / Etalab](https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2025/geojson/departements-100m.geojson), édition 2025 à 100 m, pour la limite de la Haute-Savoie, sous [Licence Ouverte](https://www.etalab.gouv.fr/licence-ouverte-open-licence/). Le nom de la commune actuelle provient de l’[API Découpage administratif](https://geo.api.gouv.fr/decoupage-administratif/communes) ou de [Photon](https://photon.komoot.io/) et OpenStreetMap.
 - [RainViewer](https://www.rainviewer.com/api/weather-maps-api.html) pour le radar Europe et [OpenStreetMap](https://www.openstreetmap.org/copyright) pour la cartographie.
 - [Leaflet](https://leafletjs.com/), [Proj4js](https://github.com/proj4js/proj4js) et [jsfive](https://github.com/usnistgov/jsfive) sont embarqués avec leurs licences dans `app/src/main/assets/web/vendor/`.
 

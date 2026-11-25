@@ -2,3 +2,6 @@ project_id = "meteo74-android"
 
 [functions.meteo74-updates]
 verify_jwt = true
+
+[functions.meteo74-radar-france]
+verify_jwt = true
