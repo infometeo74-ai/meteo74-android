@@ -1,9 +1,0 @@
-{
-  "packageName": "fr.meteo74.android",
-  "versionCode": 7,
-  "versionName": "0.3.4",
-  "file": "Meteo74-0.3.4.apk",
-  "size": 4607165,
-  "sha256": "3176b9d22f5e9d944b015da0fb857a651fcd32192d6a2f9bb3ed2d18c3b41438",
-  "notes": "Météo74 dispose maintenant de son propre service de mise à jour. Cette version reprend le radar animé et les pictogrammes HD de la 0.3.3."
-}
