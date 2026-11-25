@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.5.1 · 25 novembre 2026 · `fr.meteo74.android`
+Version 0.6.0 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.5.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.5.1.apk)
+[Télécharger Météo74 0.6.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.6.0.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -15,6 +15,14 @@ Pour une première installation sur Android 7 ou plus récent, ouvre le lien dep
 Les villes, la position suivie et les stations de ski apparaissent dans une liste de grandes tuiles qui défile verticalement. Une commune ouvre ses prévisions horaires et à dix jours. Une station ouvre sa fiche neige. Depuis **Ajouter une station**, choisir une fiche puis **Ajouter à l’accueil**. L’étoile de la fiche et le bouton **Gérer** permettent de retirer une station. Les tuiles de stations peuvent aussi constituer tout l’accueil.
 
 **Ma position** figure également dans le sélecteur. Elle occupe une seule tuile. La localisation démarre sur demande, suit les déplacements pendant l’utilisation et reprend au retour dans l’application. Les communes précédemment enregistrées restent disponibles après la mise à jour. La source Open-Meteo est indiquée une fois pour la liste.
+
+## Carte des observations
+
+Dans **Carte**, sélectionner la température, les précipitations sur une heure, le vent moyen, les rafales, l’humidité ou la pression ramenée au niveau de la mer. Le dernier relevé horaire propose aussi la neige au sol. Toucher une valeur ouvre la fiche de la station avec son altitude, son réseau et l’heure locale. Toucher la surface colorée donne l’estimation à cet endroit. [Aperçu sur téléphone](artwork/carte-observations.png)
+
+Les mesures de moins de 90 minutes proviennent des balises FFVL, des capteurs extérieurs Sensor.Community et des bulletins METAR. Le cumul récent de MétéoSuisse provient du produit CombiPrecip sur 60 minutes. La fonction `meteo74-observations` renvoie séparément le dernier relevé horaire du fichier départemental de Météo-France, publié quotidiennement. Le téléphone conserve la dernière consultation de chaque mode et indique les interruptions de réseau.
+
+Les limites départementales, les noms de communes et le relief sont embarqués. Le champ estimé perd de l’opacité avec la distance, et avec l’écart d’altitude pour les mesures sensibles au relief. Les coordonnées des stations Infoclimat figurent dans une option du répertoire. Les valeurs de ces stations nécessitent un accès API et le respect des licences propres à chaque station. Sources et conditions figurent en bas de la carte.
 
 ## Neige et stations
 

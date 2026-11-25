@@ -1,3 +1,15 @@
+# Météo74 0.6.0
+
+26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 12. L’APK signé contient 4 711 533 octets. SHA-256 `6718a6521b559995888282450e9cf4135603318b8dd4593cb0306fc58dc4572b`. Son certificat correspond à celui de la 0.5.1. Les 92 fichiers de l’interface embarquée correspondent aux sources. L’alignement ZIP est validé.
+
+Les 40 tests passent. Les nouveaux contrôles couvrent le contour et le relief du département, les stations frontalières, les mesures périmées, les unités de vent et de pression, les valeurs nulles, la qualité des relevés et le décodage du cumul CombiPrecip sur 60 minutes. Android Lint rapporte zéro erreur et cinq avertissements.
+
+La fonction de production a renvoyé 22 stations récentes des réseaux FFVL, Sensor.Community et METAR, et 36 stations pour le dernier relevé horaire de Météo-France. Ce dernier comportait 35 mesures de température et 31 cumuls de précipitations. Le nombre de stations récentes varie avec l’heure et la disponibilité des réseaux. La trame CombiPrecip contrôlée couvrait les 20 162 cellules intérieures du relief embarqué.
+
+Dans Chromium mobile, l’interface extraite de l’APK a chargé les deux modes et le cumul réel de MétéoSuisse. Les vérifications ont porté sur les couleurs, leur découpage à la limite du département, les unités, les fiches de station, la recherche d’Ésery dans le répertoire Infoclimat, le retour depuis les autres onglets, les données en cache hors connexion et l’affichage aux largeurs de 320, 393 et 600 pixels. La vérification mobile a été réalisée en émulation.
+
+Les téléchargements complets depuis le dépôt et le service proposé dans les paramètres correspondent octet pour octet à l’APK signé. Le manifeste annonce 0.6.0. La reprise renvoie HTTP 206 et l’intervalle hors fichier HTTP 416. Le service de distribution de l’application accepte uniquement la lecture.
+
 # Météo74 0.5.1
 
 25 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 11. Les 4 637 550 octets de l’APK ont pour SHA-256 `b07b4e18eecdf9bc0db8f8603f69935ed6d2e52a14d09f6e673493e0e9feb33a`. La signature Android correspond à celle de la 0.5.0. Les 86 fichiers de l’interface correspondent aux sources et l’alignement ZIP est validé.

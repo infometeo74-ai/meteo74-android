@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 11,
-  "versionName": "0.5.1",
-  "file": "Meteo74-0.5.1.apk",
-  "size": 4637550,
-  "sha256": "b07b4e18eecdf9bc0db8f8603f69935ed6d2e52a14d09f6e673493e0e9feb33a",
-  "notes": "Ajoutez vos stations à l’accueil. Les fiches affichent le sommet des pistes par secteur, les relevés de neige et les ouvertures directement dans Météo74."
+  "versionCode": 12,
+  "versionName": "0.6.0",
+  "file": "Meteo74-0.6.0.apk",
+  "size": 4711533,
+  "sha256": "6718a6521b559995888282450e9cf4135603318b8dd4593cb0306fc58dc4572b",
+  "notes": "Nouvel onglet Carte en Haute-Savoie. Température, précipitations sur 1 h, vent, rafales, humidité, pression et neige au sol. Touchez une station pour lire ses mesures et leur heure."
 }
