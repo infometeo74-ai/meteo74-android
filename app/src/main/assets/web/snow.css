@@ -69,3 +69,24 @@
 .snow-routes small{color:var(--muted);white-space:nowrap}
 .snow-routes small[data-state="open"]{color:#236745}
 @media(max-width:360px){.home-tools button{gap:3px;font-size:12px}.home-tools .icon{width:14px}}
+#snow-map-host{margin:12px 0 8px}
+#snow-map-host #obs-map{height:clamp(190px,26dvh,290px)}
+#snow-map-host .obs-caption{padding:7px 2px 0}
+#snow-map-host .obs-caption strong{font-size:12px}
+#snow-map-host .obs-caption p{font-size:11px}
+#snow-map-host .obs-map-card{box-shadow:0 3px 12px #18475712}
+.resort-marker{display:grid;place-items:center;background:#12566c;color:#fff;border:1.5px solid white;border-radius:50%;box-shadow:0 1px 4px #10374575}
+.resort-marker .icon{width:15px;height:15px;stroke-width:1.9}
+.resort-marker b{position:absolute;top:-5px;right:-6px;color:#123d50;background:#e6faff;border:1px solid #709fae;min-width:14px;height:14px;border-radius:10px;font:700 10px/12px system-ui;text-align:center}
+.resort-marker:focus-visible{outline:3px solid #ee9136}
+.resort-choices{display:grid;min-width:140px}
+.resort-choices button{display:flex;align-items:center;gap:7px;min-height:36px;text-align:left;color:#204f61}
+.resort-choices .icon{width:15px;height:15px;flex:none}
+.snow-row{display:grid;grid-template-columns:minmax(0,1fr) auto 13px;gap:4px 6px;padding:12px 14px}
+.snow-row .snow-preview-temp{display:flex;align-items:center;gap:2px;color:#1b4b60}
+.snow-preview-temp b{font-size:19px}
+.snow-preview-temp .weather-icon{width:31px;height:31px;object-fit:contain}
+.snow-row .snow-preview-extra{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.snow-preview-extra>span{display:inline-flex;align-items:center;gap:4px;background:#edf5f6;border-radius:6px;color:#245867;padding:3px 6px;font:600 11px/1.4 system-ui}
+.snow-row .snow-preview-extra>small{font-size:11px;color:#647d86}
+.snow-preview-extra .icon{width:13px;height:13px}

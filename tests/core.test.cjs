@@ -12,7 +12,7 @@ test('All weather codes resolve to bundled high-density artwork; fog, frost and 
  const codes=[0,1,2,3,45,48,51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82,85,86,95,96,97,99];
  const files=new Set();
  for(const code of codes)for(const day of [true,false]){
-  const file=C.weatherSymbol(code,day)+'.webp';
+  const file=C.weatherSymbol(code,day,35)+'.webp';
   const bytes=fs.readFileSync(path.join(root,file));
   assert.equal(bytes.toString('ascii',8,12),'WEBP');
   assert.equal(bytes.toString('ascii',12,16),'VP8X');
@@ -25,7 +25,7 @@ test('All weather codes resolve to bundled high-density artwork; fog, frost and 
  assert.equal(new Set(catalogue.map(item=>item.id)).size,58);
  for(const item of catalogue){assert.ok(item.label);files.add(item.file);}
  assert.deepEqual([...files].sort(),fs.readdirSync(root).sort());
- for(const code of [0,1,2,80,81,82,85,86,95])assert.notEqual(C.weatherSymbol(code,true),C.weatherSymbol(code,false));
+ for(const code of [0,1,2,80,81,82,85,86,95])assert.notEqual(C.weatherSymbol(code,true,35),C.weatherSymbol(code,false,35));
  assert.notEqual(C.weatherSymbol(45),C.weatherSymbol(48));
  assert.equal(C.weatherSymbol(null),null);assert.equal(C.weatherSymbol(999,false),null);
 });
@@ -51,4 +51,18 @@ test('Chart range works for constant, negative and missing series',()=>{
  assert.equal(C.scale([null,undefined,NaN]),null);
  const s=C.scale([-3,-3,null]);assert.ok(s.high>s.low);assert.equal(s.ratio(-3),.5);
  const t=C.scale([-10,0,20]);assert.ok(t.ratio(-10)>=0);assert.ok(t.ratio(20)<=1);
+});
+
+test('Overcast showers respect cloud cover, dry intervals, unknown cover and night',()=>{
+ for(const daylight of [true,false]){
+  assert.equal(C.weatherSymbol(80,daylight,100,.2),'wx-rain-light');
+  assert.equal(C.weatherSymbol(86,daylight,98,.4),'wx-snow-heavy');
+  assert.equal(C.weatherSymbol(80,daylight,100,0),'wx-overcast');
+  assert.equal(C.condition(80,daylight,100,.2).label,'Couvert, averses');
+  assert.equal(C.condition(61,daylight,100,0).label,'Couvert, pluie intermittente');
+  assert.equal(C.weatherSymbol(80,daylight,undefined,.3),'wx-rain-light');
+  assert.equal(C.weatherSymbol(null,daylight,100),null);
+ }
+ assert.equal(C.weatherSymbol(80,true,35,.2),'wx-showers-light-day');
+ assert.equal(C.condition(2,true,99).label,'Ciel couvert');
 });

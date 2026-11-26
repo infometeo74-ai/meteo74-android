@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.6.1 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.7.0 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -16,12 +16,12 @@ if(previous.some(oldGPS))storage.set('favorites',favorites);
 const state={place:C.validPlace(saved)?saved:null,favorites,following,position:C.validPlace(lastPosition)?lastPosition:null,
     selectedLocation:following&&storage.get('selected-location',oldGPS(saved)),view:'now',data:null,fetchedAt:0,
     searchController:null,searchTimer:null,searchSeq:0,geoMessage:'',geoDenied:false,homeScroll:0};
-const paths={map:'<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"/><path d="M9 3v16m6-14v16"/>',mountain:'<path d="m2 19 7.3-13L14 14l2.6-4.4L22 19H2Z"/><path d="m6.8 10.4 2.5 2.1 2.1-2.1"/>',settings:'<path d="M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1Z"/><circle cx="12" cy="12" r="3"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20.8 14.5A9 9 0 0 1 9.5 3.2 9 9 0 1 0 20.8 14.5Z"/>',pin:'<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/>',chevron:'<path d="m9 5 7 7-7 7"/>',star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>',refresh:'<path d="M20 7v5h-5M4 17v-5h5M5.6 7A7.5 7.5 0 0 1 19 8l1 4M4 12l1 4a7.5 7.5 0 0 0 13.4 1"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.2"/>',wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h6a3 3 0 1 1-3 3"/>',drop:'<path d="M12 3S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12Z"/>',thermometer:'<path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0Zm3-6v9"/>',radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18 5M12 3v2m9 7h-2m-7 7v2M3 12h2"/><circle cx="12" cy="12" r="1"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v5m10-5v5M3 11h18m-13 5h1m6 0h1"/>',locate:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>',play:'<path d="m8 5 11 7-11 7Z"/>',pause:'<path d="M9 5v14m6-14v14"/>',plus:'<path d="M12 5v14M5 12h14"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',sunrise:'<path d="M3 17h18M1 21h22M7 17a5 5 0 0 1 10 0M12 3v5m-3-2 3-3 3 3M3 11l2 2m14 0 2-2"/>',pressure:'<circle cx="12" cy="12" r="9"/><path d="m12 12 4-5M5 12h1m12 0h1M12 5v1M7 18h10"/>',trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>'};
+const paths={snowflake:'<path d="M12 2v20M3.4 7l17.2 10M3.4 17L20.6 7M9 4l3 2 3-2M9 20l3-2 3 2M4 10l1-3 3-1M16 18l3-1 1-3M4 14l1 3 3 1M16 6l3 1 1 3"/>',tracks:'<path d="m4 18 6-12m-1 14 7-14m-2 14 6-12"/>',camera:'<rect x="3" y="7" width="18" height="13" rx="3"/><path d="m7 7 2-3h6l2 3"/><circle cx="12" cy="13" r="3"/>',map:'<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"/><path d="M9 3v16m6-14v16"/>',mountain:'<path d="m2 19 7.3-13L14 14l2.6-4.4L22 19H2Z"/><path d="m6.8 10.4 2.5 2.1 2.1-2.1"/>',settings:'<path d="M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1Z"/><circle cx="12" cy="12" r="3"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20.8 14.5A9 9 0 0 1 9.5 3.2 9 9 0 1 0 20.8 14.5Z"/>',pin:'<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/>',chevron:'<path d="m9 5 7 7-7 7"/>',star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>',refresh:'<path d="M20 7v5h-5M4 17v-5h5M5.6 7A7.5 7.5 0 0 1 19 8l1 4M4 12l1 4a7.5 7.5 0 0 0 13.4 1"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.2"/>',wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h6a3 3 0 1 1-3 3"/>',drop:'<path d="M12 3S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12Z"/>',thermometer:'<path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0Zm3-6v9"/>',radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18 5M12 3v2m9 7h-2m-7 7v2M3 12h2"/><circle cx="12" cy="12" r="1"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v5m10-5v5M3 11h18m-13 5h1m6 0h1"/>',locate:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>',play:'<path d="m8 5 11 7-11 7Z"/>',pause:'<path d="M9 5v14m6-14v14"/>',plus:'<path d="M12 5v14M5 12h14"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',sunrise:'<path d="M3 17h18M1 21h22M7 17a5 5 0 0 1 10 0M12 3v5m-3-2 3-3 3 3M3 11l2 2m14 0 2-2"/>',pressure:'<circle cx="12" cy="12" r="9"/><path d="m12 12 4-5M5 12h1m12 0h1M12 5v1M7 18h10"/>',trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>'};
 const icon=name=>'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.info)+'</svg>';
 function icons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));}icons();
 function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function weather(code,day=true){
- const id=C.weatherSymbol(code,day),label=escape(C.condition(code,day).label);
+function weather(code,day=true,cloud,precip){
+ const id=C.weatherSymbol(code,day,cloud,precip),label=escape(C.condition(code,day,cloud,precip).label);
  if(!id)return '<span class="weather-icon weather-unavailable" role="img" aria-label="'+label+'">—</span>';
  return '<img class="weather-icon" src="assets/weather/hd/'+id+'.webp" width="512" height="512" alt="'+label+'" decoding="async">';
 }
@@ -93,9 +93,9 @@ function paintCard(node,entry,record) {
     node.classList.toggle('is-night',c?.is_day===0);
     field('date').textContent=c?(stale?'Données du ':'')+C.date(c.time,d.timezone,{day:'numeric',month:'short'})+' · '+C.clock(c.time,d.timezone):'';
     field('temperature').innerHTML=(c?C.fmt(c.temperature_2m):'—')+'<sup>°</sup>';
-    field('condition').textContent=c?C.condition(c.weather_code,c.is_day!==0).label:!p?'Recherche de la position…':errors.get(C.placeKey(p))||'Chargement…';
+    field('condition').textContent=c?C.condition(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation).label:!p?'Recherche de la position…':errors.get(C.placeKey(p))||'Chargement…';
     field('feels').textContent=following&&state.geoMessage?state.geoMessage:c?'Ressenti '+C.fmt(c.apparent_temperature)+'° · '+C.fmt(d.elevation)+' m':'';
-    field('symbol').innerHTML=c?weather(c.weather_code,c.is_day!==0):'';
+    field('symbol').innerHTML=c?weather(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation):'';
     field('wind').textContent=c?C.fmt(c.wind_speed_10m)+' km/h':'—';
     field('humidity').textContent=c?C.fmt(c.relative_humidity_2m)+' %':'—';
     field('range').textContent=di<0?'—':C.fmt(a.temperature_2m_min[di])+'° / '+C.fmt(a.temperature_2m_max[di])+'°';
@@ -232,7 +232,7 @@ async function loadFocus(force=false) {
 }
 function todayIndex(d){const now=C.date(Date.now()/1000,d.timezone,{year:'numeric',month:'2-digit',day:'2-digit'});return d.daily.time.findIndex(t=>C.date(t,d.timezone,{year:'numeric',month:'2-digit',day:'2-digit'})===now);}
 function renderWeather(){const d=state.data;if(!d)return;const c=d.current,tz=d.timezone,di=todayIndex(d),a=d.daily;
- const hours=C.hours(d);$('hourly').innerHTML=hours.length?hours.map((h,i)=>'<article class="hour-card"><span>'+C.date(h.time,tz,{hour:'2-digit'})+'</span>'+weather(h.code,h.isDay)+'<strong>'+C.fmt(h.temperature)+'°</strong><span class="rain-prob">'+icon('drop')+C.fmt(h.probability)+' %</span></article>').join(''):'<p class="empty-text">Les prévisions enregistrées ne couvrent plus les prochaines heures. Actualisez la météo.</p>';
+ const hours=C.hours(d);$('hourly').innerHTML=hours.length?hours.map((h,i)=>'<article class="hour-card"><span>'+C.date(h.time,tz,{hour:'2-digit'})+'</span>'+weather(h.code,h.isDay,h.cloud,h.precip)+'<strong>'+C.fmt(h.temperature)+'°</strong><span class="rain-prob">'+icon('drop')+C.fmt(h.probability)+' %</span></article>').join(''):'<p class="empty-text">Les prévisions enregistrées ne couvrent plus les prochaines heures. Actualisez la météo.</p>';
  drawChart(hours,tz);
  const uv=di<0?null:a.uv_index_max[di],uvLabel=!C.finite(uv)?'Non disponible':uv<3?'Faible':uv<6?'Modéré':uv<8?'Élevé':uv<11?'Très élevé':'Extrême';
  const detail=(symbol,title,value,unit,sub)=>'<article class="detail-card"><div class="detail-label">'+icon(symbol)+title+'</div><div class="detail-value">'+value+'<small>'+unit+'</small></div><p>'+sub+'</p></article>';
@@ -245,12 +245,13 @@ function drawChart(hours,tz){const s=C.scale(hours.map(h=>h.temperature));if(!s)
  [s.low,(s.low+s.high)/2,s.high].forEach(v=>svg+='<line x1="27" y1="'+y(v)+'" x2="327" y2="'+y(v)+'" stroke="#e9f0f4"/><text x="0" y="'+(y(v)+3)+'">'+C.fmt(v)+'°</text>');svg+='<path d="'+path+'" fill="none" stroke="#438eb7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
  [...new Set([0,Math.floor((hours.length-1)/3),Math.floor(2*(hours.length-1)/3),hours.length-1])].forEach(i=>{const h=hours[i];svg+='<text x="'+x(i)+'" y="107" text-anchor="middle">'+C.date(h.time,tz,{hour:'2-digit'})+'</text>';if(C.finite(h.temperature))svg+='<circle cx="'+x(i)+'" cy="'+y(h.temperature)+'" r="3" fill="white" stroke="#438eb7" stroke-width="2"/>';});svg+='</svg>';$('temperature-chart').innerHTML=svg;
 }
-function renderDaily(d,di){const a=d.daily,tz=d.timezone,sc=C.scale([...a.temperature_2m_min,...a.temperature_2m_max]);$('daily-list').innerHTML=a.time.map((t,i)=>{if(di>=0&&i<di)return '';const lo=a.temperature_2m_min[i],hi=a.temperature_2m_max[i],co=C.condition(a.weather_code[i]);const left=sc&&C.finite(lo)?Math.max(0,100*sc.ratio(lo)):0,range=sc&&C.finite(lo)&&C.finite(hi)?Math.max(3,100*(hi-lo)/(sc.high-sc.low)):0;
- return '<details class="daily-row"><summary aria-label="'+escape(C.date(t,tz,{weekday:'long',day:'numeric',month:'long'})+', '+co.label+', '+C.fmt(lo)+' à '+C.fmt(hi)+' degrés')+'"><span class="daily-date"><b>'+(i===di?'Aujourd’hui':i===di+1&&di>=0?'Demain':C.date(t,tz,{weekday:'long'}))+'</b><small>'+C.date(t,tz,{day:'numeric',month:'short'})+'</small></span>'+weather(a.weather_code[i])+'<span class="rain-prob">'+C.fmt(a.precipitation_probability_max[i])+' %</span><span class="daily-range"><span>'+C.fmt(lo)+'°</span><span class="range-track"><span class="range-fill" style="left:'+left+'%;width:'+range+'%"></span></span><span>'+C.fmt(hi)+'°</span></span></summary><div class="daily-extra"><strong>'+co.label+'</strong><div class="daily-extra-grid"><span>Pluie / neige : '+C.fmt(a.precipitation_sum[i],1)+' mm</span><span>UV maximum : '+C.fmt(a.uv_index_max[i],1)+'</span><span>Vent max. : '+C.fmt(a.wind_speed_10m_max[i])+' km/h</span><span>Rafales : '+C.fmt(a.wind_gusts_10m_max[i])+' km/h</span><span>Lever : '+C.clock(a.sunrise[i],tz)+'</span><span>Coucher : '+C.clock(a.sunset[i],tz)+'</span></div></div></details>';}).join('')||'<p class="empty-text">Actualisez les prévisions.</p>';}
+function renderDaily(d,di){const a=d.daily,tz=d.timezone,sc=C.scale([...a.temperature_2m_min,...a.temperature_2m_max]);$('daily-list').innerHTML=a.time.map((t,i)=>{if(di>=0&&i<di)return '';const lo=a.temperature_2m_min[i],hi=a.temperature_2m_max[i],cloud=C.dailyCloud(d,i),co=C.condition(a.weather_code[i],true,cloud);const left=sc&&C.finite(lo)?Math.max(0,100*sc.ratio(lo)):0,range=sc&&C.finite(lo)&&C.finite(hi)?Math.max(3,100*(hi-lo)/(sc.high-sc.low)):0;
+ return '<details class="daily-row"><summary aria-label="'+escape(C.date(t,tz,{weekday:'long',day:'numeric',month:'long'})+', '+co.label+', '+C.fmt(lo)+' à '+C.fmt(hi)+' degrés')+'"><span class="daily-date"><b>'+(i===di?'Aujourd’hui':i===di+1&&di>=0?'Demain':C.date(t,tz,{weekday:'long'}))+'</b><small>'+C.date(t,tz,{day:'numeric',month:'short'})+'</small></span>'+weather(a.weather_code[i],true,cloud)+'<span class="rain-prob">'+C.fmt(a.precipitation_probability_max[i])+' %</span><span class="daily-range"><span>'+C.fmt(lo)+'°</span><span class="range-track"><span class="range-fill" style="left:'+left+'%;width:'+range+'%"></span></span><span>'+C.fmt(hi)+'°</span></span></summary><div class="daily-extra"><strong>'+co.label+'</strong><div class="daily-extra-grid"><span>Pluie / neige : '+C.fmt(a.precipitation_sum[i],1)+' mm</span><span>UV maximum : '+C.fmt(a.uv_index_max[i],1)+'</span><span>Vent max. : '+C.fmt(a.wind_speed_10m_max[i])+' km/h</span><span>Rafales : '+C.fmt(a.wind_gusts_10m_max[i])+' km/h</span><span>Lever : '+C.clock(a.sunrise[i],tz)+'</span><span>Coucher : '+C.clock(a.sunset[i],tz)+'</span></div></div></details>';}).join('')||'<p class="empty-text">Actualisez les prévisions.</p>';}
 function switchView(view,stationId){
-    if(!['now','detail','map','radar','forecast','snow'].includes(view))return;
+    if(!['now','detail','map','radar','forecast','snow','webcams'].includes(view))return;
     const before=state.view;
     if(before==='snow'&&view!=='snow')winter.leave();
+    if(before==='webcams'&&view!=='webcams')webcams.leave();
     if(before==='map'&&view!=='map')observations.leave();
     if(before==='now'&&view!=='now'){state.homeScroll=window.scrollY;winter.stopHome();}
     state.view=view;++refreshSequence;notice('');$('refresh').classList.remove('busy');
@@ -267,6 +268,7 @@ function switchView(view,stationId){
     updateCredits();
     window.scrollTo(0,view==='now'&&before!=='now'?state.homeScroll:0);
     if(view==='snow')winter.enter(stationId);
+    if(view==='webcams')webcams.enter();
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 $('back-places').onclick=()=>switchView('now');
@@ -317,14 +319,16 @@ function startFollowing(){
     selectEntry({key:'location',place:state.position});
     renderPlaces();switchView('now');window.scrollTo(0,0);locationWatch.start(true);
 }
-const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService,isPinned:id=>state.stationIds.includes(id),pinStation,goHome:()=>switchView('now')});
-const radar=MeteoRadar.create({$,C,storage,icon,escape,fetchJSON,place:()=>activeEntry()?.place||null});
 const observations=MeteoObservations.create({$,icon,escape,fetchJSON,storage,service:MeteoService});
+const webcams=MeteoWebcams.create({$,icon,escape,openDialog});
+const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService,observations,isPinned:id=>state.stationIds.includes(id),pinStation,goHome:()=>switchView('now')});
+const radar=MeteoRadar.create({$,C,storage,icon,escape,fetchJSON,place:()=>activeEntry()?.place||null});
 function refresh(force=false){
     notice('');
     if(state.view==='radar'){if(force)radar.refresh();else radar.resume();}
     else if(state.view==='map')observations.refresh(force);
     else if(state.view==='snow')winter.refresh(force);
+    else if(state.view==='webcams')webcams.refresh(force);
     else if(state.view==='now')loadHome(force);
     else if(state.view==='forecast'||state.view==='detail')loadFocus(force);
 }

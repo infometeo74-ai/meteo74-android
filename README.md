@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.6.1 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.0 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.6.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.6.1.apk)
+[Télécharger Météo74 0.7.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.0.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -16,15 +16,15 @@ Les villes, la position suivie et les stations de ski apparaissent dans une list
 
 **Ma position** figure également dans le sélecteur. Elle occupe une seule tuile. La localisation démarre sur demande, suit les déplacements pendant l’utilisation et reprend au retour dans l’application. Les communes précédemment enregistrées restent disponibles après la mise à jour. La source Open-Meteo est indiquée une fois pour la liste.
 
+Les pictogrammes des villes et des stations tiennent compte de la nébulosité. Un code d’averses peut ainsi s’afficher sous un ciel couvert. Une couverture inconnue produit un pictogramme de précipitations neutre. Les prévisions quotidiennes des villes utilisent la couverture moyenne des heures de jour.
+
 ## Cartes météo
 
-Dans **Carte → Maintenant**, choisir la température, la pluie sur une heure, le vent moyen, les rafales, l’humidité, la pression ou la hauteur de neige au sol. Les couleurs couvrent la Haute-Savoie. Toucher un endroit affiche la valeur locale estimée. Le modèle Météo-France fourni par Open-Meteo est échantillonné en 132 points, puis interpolé sur le relief embarqué. Des gradients locaux corrigent l’effet de l’altitude sur la température. Les écarts entre les mesures et le modèle ajustent automatiquement la surface à proximité des stations, avec une influence qui diminue selon la distance, l’écart d’altitude et le décalage horaire.
+Dans **Carte**, choisir la température, la pluie sur une heure, le vent moyen, les rafales, l’humidité, la pression ou la hauteur de neige au sol. Les couleurs couvrent la Haute-Savoie. Toucher un endroit affiche la valeur locale estimée. Le modèle Météo-France fourni par Open-Meteo est échantillonné en 132 points, puis interpolé sur le relief embarqué. Des gradients locaux corrigent l’effet de l’altitude sur la température. Les écarts entre les mesures et le modèle ajustent automatiquement la surface à proximité des stations, avec une influence qui diminue selon la distance, l’écart d’altitude et le décalage horaire.
 
 Les observations récentes des stations de Météo-France diffusées par LiveStation, des réseaux FFVL, Sensor.Community, METAR et des thermomètres à 2 m de Phénoclim alimentent le calcul. Le radar et les pluviomètres de MétéoSuisse donnent le cumul sur une heure, complété par la grille si nécessaire. Les pluviomètres de Haute-Savoie ajustent ce cumul lorsque dix mesures consécutives de six minutes sont disponibles. La carte indique son heure de validité, ses sources et le nombre de stations utilisées. Les services récupèrent une seule grille partagée pour les variables du département et la conservent sur trois heures. [Modèle Météo-France via Open-Meteo](https://open-meteo.com/en/docs/meteofrance-api) · [Phénoclim](https://spot.creamontblanc.org/programmes/phenoclim)
 
-**Neige au sol** associe le modèle de hauteur de neige Open-Meteo, les observations nivo-météorologiques et les hauteurs déjà enregistrées pour les fiches des domaines. Les bulletins sont actualisés de façon centralisée une fois par heure et conservés par date. La carte lit ces valeurs en base. Chaque point de domaine doit avoir un nom localisable et une altitude publiée. Pour cette couche, une mesure ne corrige pas un terrain éloigné de plus de 260 m en altitude. Toucher la carte affiche la hauteur estimée, l’altitude locale approximative et, lorsqu’il existe, un relevé proche du même étage. [Exemple de bulletin par altitude à Flaine](https://bulletin.lumiplan.pro/displayAll.php?lang=fr&pays=france&region=alpes&station=flaine)
-
-**Relevé horaire** utilise les stations du dernier fichier départemental de Météo-France et les thermomètres Phénoclim à la même heure. **Par date** réunit les postes automatiques, les postes climatologiques manuels et le réseau nivo-météorologique. Le calendrier couvre l’année précédente et l’année en cours. Les couches distinguent minima, maxima, pluie sur 24 h, vent moyen, rafale maximale et relevés de neige. Certains postes transmettent en fin de mois. La carte des archives s’atténue lorsque les mesures sont trop éloignées. [Bilans Météo-France](https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes) · [Réseau nivo-météorologique](https://www.data.gouv.fr/datasets/archive-reseau-nivo-meteorologique)
+**Neige au sol** associe les hauteurs des bulletins des domaines et des stations météo au modèle MétéoSuisse ICON-CH1 à environ 1 km, avec ICON-D2 en secours. Les 132 points de la grille sont complétés par 54 points dans les vallées. Les modèles sont interrogés à l’altitude native de leurs mailles. L’interpolation évalue la présence de neige entre terrains d’altitude comparable avant d’estimer son épaisseur. Chaque mesure de terrain confirme, réduit ou augmente localement l’épaisseur sur son étage d’altitude. Un sol nu laisse apparaître le fond de carte. L’échelle est graduée de 0 à 300 cm et le chiffre au toucher conserve les épaisseurs supérieures à trois mètres. [Modèle MétéoSuisse](https://open-meteo.com/en/docs/meteoswiss-api)
 
 Le relevé de Balme apparaît dans les bulletins de Chamonix et de Vallorcine. Météo74 le compte une seule fois. Les points de la vallée correspondent aux altitudes de l’Index, de la Tête de Balme, de Bochard et du Prarion. [Bulletin des domaines de Chamonix](https://bulletinv3.lumiplan.pro/bulletin.php?lang=fr&station=chamonix) · [Plan de Brévent–Flégère](https://static.seetheworld.com/item_files/original/Plan_Hiver_BVT-FLG.pdf)
 
@@ -42,7 +42,15 @@ L’onglet **Neige** réunit 40 stations et accès de ski alpin et 22 sites de s
 
 Les 40 fiches alpines distinguent 49 secteurs de prévision. Chaque secteur a un point de départ et un sommet de pistes nommé, avec ses propres coordonnées et son altitude. Le catalogue conserve la référence de chaque sommet. Le signe ≈ distingue les hauteurs déterminées à partir des tracés de pistes de la DDT et du relief IGN. Les sites nordiques utilisent un point météo identifié. Les deux pratiques disposent de cinq jours de prévisions.
 
+En haut de la liste, la carte de neige utilise les mêmes données que l’onglet Carte. Les flocons ouvrent les fiches des stations. Les stations proches partagent un bouton à cette échelle et se séparent en zoomant. La pratique et la recherche filtrent à la fois les flocons et la liste. Chaque ligne indique la température au départ, les hauteurs publiées avec les altitudes correspondantes et les ouvertures communiquées. La liste charge en une seule requête les résumés des bulletins enregistrés.
+
 La fonction **meteo74-neige** interroge les sources configurées pour chaque fiche. Elle extrait les relevés de neige, les pistes et remontées ouvertes, les kilomètres nordiques et, selon la source, le détail nommé des ouvertures. Les pages tierces sont traitées sur le serveur. Le téléphone reçoit des données structurées et les présente dans Météo74. Une préouverture annoncée garde ses propres dates. Les états affichés en direct par un opérateur portent une date de consultation. Les autres ouvertures et hauteurs relevées nécessitent un bulletin récent. À défaut, la hauteur de neige modélisée au point météo est signalée comme une estimation.
+
+## Webcams
+
+L’onglet **Webcams** réunit 22 caméras du lac d’Annecy, des Aravis et Bornes, du Chablais, du Grand Massif et du massif du Mont-Blanc. Le sélecteur filtre les vues par secteur. Une pression sur une photo l’agrandit dans l’application. La date accompagne l’image lorsqu’elle est publiée par le diffuseur. Le lien de la fiche ouvre la webcam officielle. Les images sont chargées à mesure du défilement. [Lac d’Annecy Tourisme](https://www.lac-annecy.com/webcams/) · [Grand Massif](https://www.grand-massif.com/webcams/) · [Le Grand-Bornand](https://www.legrandbornand.com/webcams/)
+
+[Neige et stations](artwork/neige-stations.png) · [Galerie des webcams](artwork/webcams.png)
 
 ## Radar
 

@@ -17,3 +17,10 @@ export async function finishSync(cycle:number){
     const r=await fetch(api+"meteo74_map_cache?name=eq.ski-sync&lease_cycle=eq."+cycle,{method:"PATCH",headers,body:JSON.stringify({cycle,lease_until:null}),signal:AbortSignal.timeout(4000)});
     if(!r.ok)throw Error("Synchronisation incomplète");await r.body?.cancel();
 }
+
+export async function directoryReports(){
+    const fields="station_id,date:bulletin->>date,snow:bulletin->snow,trails:bulletin->trails,lifts:bulletin->lifts,km:bulletin->km,areaStatus:bulletin->areaStatus,seasonStart:bulletin->seasonStart";
+    const r=await fetch(api+"meteo74_ski_bulletins?select="+encodeURIComponent(fields),{headers,signal:AbortSignal.timeout(5000)});
+    if(!r.ok)throw Error("Bulletins indisponibles");
+    return {reports:await r.json(),updatedAt:Date.now()};
+}

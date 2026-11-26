@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 13,
-  "versionName": "0.6.1",
-  "file": "Meteo74-0.6.1.apk",
-  "size": 4713325,
-  "sha256": "726ffecbff86b863f7e2c208ca5d94eb623547ecd8f0b987ce7fbf5b24c37072",
-  "notes": "Cartes en couleurs sur toute la Haute-Savoie, ajustées par les stations. Neige au sol calculée avec les bulletins des domaines et l’altitude réelle des relevés. Nouveau calendrier des observations."
+  "versionCode": 14,
+  "versionName": "0.7.0",
+  "file": "Meteo74-0.7.0.apk",
+  "size": 4718672,
+  "sha256": "7082e9fc08a77153681e1952623709beff858e2cf160d0019c4b92bf062e7f3d",
+  "notes": "Averses et éclaircies selon la couverture nuageuse. Carte de neige de 0 à 300 cm ajustée aux fonds de vallée, stations à flocons et bulletins résumés. Nouvel onglet de 22 webcams."
 }

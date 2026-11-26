@@ -19,7 +19,7 @@ const metrics={
  gust:{label:'Rafales',unit:'km/h',short:'',icon:'wind',radius:19,vertical:500,stops:[0,10,25,45,65,90,120,160],colors:['#d5e8e2','#aadbd5','#63c3b4','#8fba78','#eac466','#e18d50','#b94f73','#72468b'],ticks:[0,25,45,65,90,120,160]},
  humidity:{label:'Humidité',unit:'%',short:'',icon:'drop',radius:22,vertical:750,stops:[0,20,40,60,80,100],colors:['#e4bd7c','#dfcb92','#c1d9af','#8bcab9','#57aaba','#4078a3'],ticks:[0,20,40,60,80,100]},
  pressure:{label:'Pression au niveau de la mer',brief:'Pression',unit:'hPa',short:'',icon:'pressure',radius:16,vertical:0,stops:[970,985,1000,1015,1030,1045],colors:['#8264ae','#7083c0','#73baca','#a6cdb0','#e2ce81','#d69060'],ticks:[970,985,1000,1015,1030,1045]},
- snow:{label:'Neige au sol',unit:'cm',short:'',icon:'mountain',radius:12,vertical:220,stops:[0,2,10,25,50,100,200],colors:['#e5edef','#c4e2ed','#89ccde','#63acd0','#728ac7','#805da7','#673c88'],ticks:[0,10,25,50,100,200]}
+ snow:{label:'Neige au sol',unit:'cm',short:'',icon:'mountain',radius:10,vertical:150,stops:[0,1,5,10,25,50,100,150,200,250,300],colors:['#f2f5f1','#d7f6fa','#a4e3ef','#69cadd','#379bc9','#286cba','#6556af','#894b91','#a03470','#aa2851','#791935'],ticks:[0,10,25,50,100,200,300]}
 };
 Object.assign(metrics,{
  minTemp:{...metrics.temp,label:'Température minimale',brief:'T° mini'},
@@ -85,20 +85,42 @@ function modelSurface(metric,frame,dem){
    slopes[i]=Math.max(-.009,Math.min(.006,(zt-z*t/Math.max(1,n)-.005*prior)/(Math.max(0,zz-z*z/Math.max(1,n))+prior)));
   }
  }
+ // Index supplemental valley model cells into the same neighbourhoods as the main grid.
+ const valleyBins=new Map();
+ if(metric==='snow')for(const entry of frame.snowValleys||[]){
+  if(!Array.isArray(entry)||entry.length!==4||!entry.every(Number.isFinite))continue;
+  const [lat,lon,z,cm]=entry;
+  const x=Math.floor((lon-west)*(nx-1)/(east-west)),y=Math.floor((lat-south)*(ny-1)/(north-south));
+  const key=y*nx+x;
+  if(!valleyBins.has(key))valleyBins.set(key,[]);
+  valleyBins.get(key).push({lat,lon,z,cm});
+ }
  function at(lon,lat,height){
   const gx=(lon-west)*(nx-1)/(east-west),gy=(lat-south)*(ny-1)/(north-south);
   if(gx<0||gy<0||gx>nx-1||gy>ny-1)return NaN;
   const x=Math.min(nx-2,Math.floor(gx)),y=Math.min(ny-2,Math.floor(gy)),dx=gx-x,dy=gy-y;
   let sum=0,total=0;
   if(metric==='snow'){
-   // Use terrain bands as well as distance. A snowy summit and a valley can share a cell.
-   for(let sy=Math.max(0,y-1);sy<=Math.min(ny-1,y+2);sy++)for(let sx=Math.max(0,x-1);sx<=Math.min(nx-1,x+2);sx++){
-    const k=sy*nx+sx;if(!Number.isFinite(data[k])||!Number.isFinite(elev[k]))continue;
-    const dz=Math.abs(height-elev[k])/230,d2=(gx-sx)**2+(gy-sy)**2;
-    const w=1/((.12+d2)**1.35*(1+dz*dz)**2);
-    sum+=w*data[k];total+=w;
+   // Estimate snow presence first. Averaging depth across dry ground and snowy
+   // ridges leaves an artificial dusting even when every valley cell is bare.
+   let dryWeight=0,wetWeight=0;
+   function sample(ylat,xlon,z,cm){
+    if(!Number.isFinite(z)||!Number.isFinite(cm)||cm<0)return;
+    const distance2=((lat-ylat)*111.2)**2+((lon-xlon)*77.25)**2;
+    const heightDiff=Math.abs(height-z);
+    const w=1/((2+distance2)*(1+(heightDiff/110)**2)**2);
+    if(cm<1)dryWeight+=w;else{wetWeight+=w;sum+=cm*w;}
    }
-   return total?sum/total:NaN;
+   for(let sy=Math.max(0,y-1);sy<=Math.min(ny-1,y+2);sy++)for(let sx=Math.max(0,x-1);sx<=Math.min(nx-1,x+2);sx++){
+    const k=sy*nx+sx;
+    sample(south+sy*(north-south)/(ny-1),west+sx*(east-west)/(nx-1),elev[k],data[k]);
+    for(const v of valleyBins.get(k)||[])sample(v.lat,v.lon,v.z,v.cm);
+   }
+   if(!dryWeight&&!wetWeight)return NaN;
+   const cover=wetWeight/(wetWeight+dryWeight);
+   if(cover<=.50)return 0;
+   return sum/wetWeight*Math.min(1,(cover-.50)/.40);
+
   }
   for(let j=0;j<2;j++)for(let i=0;i<2;i++){
    const k=(y+j)*nx+x+i,w=(i?dx:1-dx)*(j?dy:1-dy);
@@ -140,13 +162,14 @@ function analyze(metric,dem,stations,frame,accumulation){
   const z=Number.isFinite(s.alt)?s.alt:dem[k]&32767;
   const reference=radarHere?radar.values[k]:model?.at(s.lon,s.lat,z);
   if(!Number.isFinite(reference))continue;
-  const delta=(s.values[metric]-reference)*(1-.35*dt/window);
-  residuals.push({...s,values:{[metric]:delta}});
+  const value=metric==='snow'?s.values.snow:(s.values[metric]-reference)*(1-.35*dt/window);
+  residuals.push({...s,values:{[metric]:value}});
  }
  if(residuals.length){
   const corrections=interpolate(metric,residuals,dem,radar?9:undefined);
   for(let i=0;i<base.length;i++)if(Number.isFinite(base[i])&&Number.isFinite(corrections.values[i])){
-   let v=base[i]+corrections.values[i]*corrections.confidence[i]/206;
+   const influence=corrections.confidence[i]/206;
+   let v=metric==='snow'?base[i]*(1-influence)+corrections.values[i]*influence:base[i]+corrections.values[i]*influence;
    if(['snow','rain','wind','gust','humidity'].includes(metric))v=Math.max(0,v);
    base[i]=metric==='humidity'?Math.min(100,v):v;
   }

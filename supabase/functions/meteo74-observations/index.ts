@@ -124,10 +124,10 @@ async function hourly(){
     return {mode:"hourly",retrievedAt:Date.now(),time,stations,missing};
 }
 async function regionalModel(cycle:number){
-    return sharedCache("model",cycle+2,previous=>loadModel(cycle,async url=>{
+    return sharedCache("model",cycle+3,previous=>loadModel(cycle,async url=>{
         const res=await fetch(url,{headers:author,signal:AbortSignal.timeout(20000)});
         if(!res.ok){await res.body?.cancel();throw Error("Open-Meteo HTTP "+res.status);}return res.json();
-    },previous),m=>m?.schema===2&&m.end>=cycle&&m.sites?.length>0);
+    },previous),m=>m?.schema===3&&m.end>=cycle&&m.sites?.length>0);
 }
 const parisDay=(t:number)=>new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Paris",year:"numeric",month:"2-digit",day:"2-digit"}).format(t);
 async function storedDepths(from:string,to:string){

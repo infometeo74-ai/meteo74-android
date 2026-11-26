@@ -2,10 +2,10 @@ import { parseHTML } from "npm:linkedom@0.18.12";
 import feeds from "./feeds.json" with { type: "json" };
 import { readBulletin, readPlan, nordicNotice } from "./reports.mjs";
 
-import { savedReport, saveReports, claimSync, finishSync } from "./cache.ts";
+import { savedReport, saveReports, claimSync, finishSync, directoryReports } from "./cache.ts";
 
 const ttl = 15 * 60_000;
-const sources = new Map(Object.entries(feeds));
+const sources = new Map<string,Feed>(Object.entries(feeds));
 const reports = new Map<string, {until:number, value:unknown}>();
 const pending = new Map<string, Promise<unknown>>();
 const cors = { "Access-Control-Allow-Origin":"*", "Access-Control-Allow-Headers":"authorization, apikey, content-type", "Access-Control-Allow-Methods":"GET, OPTIONS" };
@@ -47,15 +47,19 @@ async function stationReport(id:string, documentFor=published) {
     }
 }
 async function syncBulletins(){
-    const cycle=Math.floor(Date.now()/3600000)*3600000;
+    const cycle=Math.floor(Date.now()/3600000)*3600000+1; // Full-directory refresh generation.
     if(!await claimSync(cycle))return {actualise:false};
     // Multiple resorts can publish different sectors of a single operator bulletin.
+    const ids=[...sources.keys()];
+    const uses=new Map<string,number>();
+    for(const source of sources.values())for(const url of [source.url,source.alternative,source.planUrl])if(url)uses.set(url,(uses.get(url)||0)+1);
     const documents=new Map<string,ReturnType<typeof published>>();
     const shared=(url:string,_signal:AbortSignal)=>{
+        if((uses.get(url)||0)<2)return published(url,AbortSignal.timeout(6500));
         if(!documents.has(url))documents.set(url,published(url,AbortSignal.timeout(6500)));
         return documents.get(url)!;
     };
-    const ids=[...sources].filter(([,s])=>["lumi","depth"].includes(s.kind)).map(([id])=>id);
+
     let cursor=0;const rows:any[]=[];
     async function worker(){
         while(cursor<ids.length){
@@ -75,6 +79,9 @@ Deno.serve(async req => {
     if (req.method==="OPTIONS") return new Response(null,{status:204,headers:cors});
     if (req.method!=="GET") return reply({error:"Méthode non prise en charge"},405);
     const params=new URL(req.url).searchParams;
+    if(params.get("mode")==="directory"){
+        try{return reply(await directoryReports());}catch{return reply({error:"Liste momentanément indisponible"},503);}
+    }
     if(params.get("sync")==="1"){
         try{return reply(await syncBulletins());}catch{return reply({error:"Synchronisation indisponible"},503);}
     }

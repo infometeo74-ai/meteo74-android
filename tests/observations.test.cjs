@@ -152,3 +152,18 @@ test('Snow depth observations correct the same terrain band without depositing s
  assert.equal(a.used,1);assert.equal(a.resorts,1);assert.equal(a.values[k],0);assert.ok(a.values[k+1]>195);
  assert.equal(F.analyze('snow',dem,[{...summit,bulletinDay:'2026-11-22'}],frame,null).used,0);
 });
+test('A dry valley stays bare beside a snowy mountainside, and can accumulate fresh snow',()=>{
+ const fs=require('node:fs');
+ const bytes=fs.readFileSync(path.join(__dirname,'../app/src/main/assets/web/assets/observations-terrain.bin'));
+ const dem=F.terrain(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+ const lon=6.62,lat=46.023,i=F.indexAt(lon,lat),h=dem[i]&32767,t=Date.now();
+ const model={nx:2,ny:2,west:5.77,east:7.08,south:45.65,north:46.44,time:t,snowElevation:[1600,2000,1500,2500],values:{snow:[55,80,70,175]},snowValleys:[[lat,lon,h,0]]};
+ assert.equal(F.analyze('snow',dem,[],model,null).values[i],0);
+ const station=(z,cm)=>({lon,lat,alt:z,time:t,values:{snow:cm}});
+ assert.equal(F.analyze('snow',dem,[station(h+650,120)],model,null).values[i],0);
+ assert.ok(F.analyze('snow',dem,[station(h,7)],model,null).values[i]>6);
+ model.snowValleys[0][3]=16;
+ assert.ok(F.analyze('snow',dem,[],model,null).values[i]>=15);
+ assert.equal(F.analyze('snow',dem,[station(h,0)],model,null).values[i],0);
+ assert.deepEqual(F.metrics.snow.ticks.slice(-2),[200,300]);
+});

@@ -12,11 +12,28 @@ const weatherArtwork={
  85:'snow-showers-*', 86:'snow-showers-heavy-*',
  95:'thunder-*', 96:'thunder-hail', 97:'thunder-*', 99:'thunder-hail'
 };
-function weatherSymbol(code,day=true){
+const rainShowers={80:'rain-light',81:'rain',82:'rain-heavy',85:'snow',86:'snow-heavy'};
+function cloudState(code,cloud,precip){
+ if(finite(cloud)&&cloud>=85){
+  if(finite(code)&&code>=0&&code<=3)return 'covered';
+  if(precip===0&&[51,53,55,61,63,80,81,82].includes(code))return 'interval';
+  return 'overcast';
+ }
+ return finite(cloud)&&cloud>=0&&cloud<65?'breaks':'uncertain';
+}
+function weatherSymbol(code,day=true,cloud,precip){
+ const sky=cloudState(code,cloud,precip);
+ if(sky==='covered'||sky==='interval')return 'wx-overcast';
+ if(sky!=='breaks'&&rainShowers[code])return 'wx-'+rainShowers[code];
  const name=finite(code)?weatherArtwork[code]:null;
  return name?'wx-'+name.replace('*',day?'day':'night'):null;
 }
-function condition(code,day=true){
+function condition(code,day=true,cloud,precip){
+ const sky=cloudState(code,cloud,precip);
+ if(sky==='covered')return {label:'Ciel couvert',icon:'cloud'};
+ if(sky==='interval')return {label:'Couvert, pluie intermittente',icon:'cloud'};
+ if(sky==='overcast'&&[80,81,82].includes(code))return {label:code===82?'Couvert, fortes averses':'Couvert, averses',icon:'rain'};
+ if(sky==='overcast'&&[85,86].includes(code))return {label:'Couvert, averses de neige',icon:'snow'};
  if(code===0)return {label:day?'Ciel dégagé':'Nuit dégagée',icon:day?'sun':'moon'};
  if(code===1||code===2)return {label:code===1?'Peu nuageux':'Éclaircies',icon:day?'partly':'nightcloud'};
  if(code===3)return {label:'Ciel couvert',icon:'cloud'};
@@ -42,10 +59,18 @@ function forecastURL(p){
 }
 function date(epoch,zone,opts){if(!finite(epoch))return '—';try{return new Intl.DateTimeFormat('fr-FR',{timeZone:zone||'Europe/Paris',...opts}).format(new Date(epoch*1000));}catch{return '—';}}
 const clock=(t,z)=>date(t,z,{hour:'2-digit',minute:'2-digit'});
-function hours(data,now=Date.now()/1000){const h=data?.hourly;if(!Array.isArray(h?.time))return [];const floor=Math.floor(now/3600)*3600;return h.time.map((time,i)=>({time,i,temperature:h.temperature_2m?.[i],probability:h.precipitation_probability?.[i],code:h.weather_code?.[i],isDay:h.is_day?.[i]!==0})).filter(x=>x.time>=floor&&x.time<floor+24*3600);}
+function hours(data,now=Date.now()/1000){const h=data?.hourly;if(!Array.isArray(h?.time))return [];const floor=Math.floor(now/3600)*3600;return h.time.map((time,i)=>({time,i,temperature:h.temperature_2m?.[i],probability:h.precipitation_probability?.[i],code:h.weather_code?.[i],cloud:h.cloud_cover?.[i],precip:h.precipitation?.[i],isDay:h.is_day?.[i]!==0})).filter(x=>x.time>=floor&&x.time<floor+24*3600);}
+function dailyCloud(data,i){
+ const h=data.hourly,day=data.daily;
+ if(!h?.cloud_cover||!day?.time?.[i])return null;
+ const begin=day.sunrise?.[i]??day.time[i],end=day.sunset?.[i]??day.time[i+1]??begin+86400;
+ let total=0,n=0;
+ for(let j=0;j<h.time.length;j++)if(h.time[j]>=begin&&h.time[j]<end&&h.is_day?.[j]!==0&&finite(h.cloud_cover[j])){total+=h.cloud_cover[j];n++;}
+ return n?total/n:null;
+}
 function validForecast(d){return d&&finite(d.current?.time)&&Array.isArray(d.hourly?.time)&&Array.isArray(d.daily?.time)&&typeof d.timezone==='string';}
 function direction(v){return finite(v)?['N','NE','E','SE','S','SO','O','NO'][Math.round(v/45)%8]:'—';}
 function scale(values){const clean=values.filter(finite);if(!clean.length)return null;let low=Math.floor(Math.min(...clean))-1,high=Math.ceil(Math.max(...clean))+1;return {low,high,ratio:v=>(v-low)/(high-low)};}
-const api={finite,fmt,condition,weatherSymbol,validPlace,placeKey,forecastURL,date,clock,hours,validForecast,direction,scale};
+const api={finite,fmt,condition,weatherSymbol,validPlace,placeKey,forecastURL,date,clock,hours,dailyCloud,validForecast,direction,scale};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MeteoCore=api;
 })(typeof window!=='undefined'?window:globalThis);

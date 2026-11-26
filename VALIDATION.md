@@ -1,3 +1,17 @@
+# Météo74 0.7.0
+
+26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 14. Les 4 718 672 octets de l’APK signé donnent le SHA-256 `7082e9fc08a77153681e1952623709beff858e2cf160d0019c4b92bf062e7f3d`. Le certificat correspond à celui de la 0.6.1. Les 93 fichiers de l’interface correspondent aux sources. Les contrôles d’alignement ZIP et les 53 tests passent. Android Lint signale zéro erreur et cinq avertissements.
+
+En émulation mobile, la tuile de Reignier-Ésery a affiché « Couvert, pluie intermittente » pour une couverture nuageuse de 100 %. La relecture du cas d’averses avec un code 80, 100 % de nuages et des précipitations a produit « Couvert, averses » et le pictogramme de pluie.
+
+Le service a renvoyé le modèle MétéoSuisse ICON-CH1 avec les 54 points de vallée. Le 26 novembre au matin, la lecture par appui sur la carte donnait 0 cm à Bonneville, Cluses, Magland et Sallanches. La surface conservait 3 cm près du relevé de Chamonix, et le relevé des Grandes Platières indiquait 250 cm à 2 500 m. Les tests de régression couvrent un épisode de neige en vallée, une mesure nulle et le voisinage d’un sommet enneigé.
+
+Les 62 fiches figurent dans le répertoire partagé. La liste de Flaine a affiché les deux hauteurs avec leurs altitudes. Les flocons ont ouvert les fiches de Flaine et du site nordique des Glières. Les essais de navigation ont couvert le retour de fiche, le filtre de pratique, la recherche, les largeurs de 320, 393 et 600 pixels et l’absence de requêtes d’archives depuis les écrans de carte.
+
+Les adresses d’images publiques des 22 webcams ont été vérifiées auprès des diffuseurs. La galerie extraite de l’APK a chargé l’image datée d’Annecy et celle du secteur du Mont-Blanc, le filtre géographique et le dialogue d’agrandissement. Les dates indiquées correspondent aux dernières images publiées par les opérateurs.
+
+Le manifeste de l’application propose la 0.7.0. Les téléchargements depuis les paramètres et depuis le dépôt public correspondent octet pour octet à l’APK signé. La reprise de téléchargement renvoie 206 et un intervalle hors fichier 416. Le service de distribution accepte uniquement les lectures.
+
 # Météo74 0.6.1
 
 26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 13. Son APK signé contient 4 713 325 octets. SHA-256 `726ffecbff86b863f7e2c208ca5d94eb623547ecd8f0b987ce7fbf5b24c37072`. Son certificat correspond à celui de la 0.6.0. L’alignement ZIP et les 92 fichiers de l’interface embarquée ont été vérifiés. Les 51 tests passent. Android Lint signale cinq avertissements et zéro erreur.

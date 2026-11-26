@@ -12,7 +12,7 @@ function matches(station, region, query) {
 }
 function forecastURL(points, daily) {
     const q = new URLSearchParams({timezone:zone,timeformat:'unixtime',forecast_days:daily?'5':'1',
-        current:'temperature_2m,weather_code,is_day,snow_depth',
+        current:'temperature_2m,weather_code,is_day,snow_depth,cloud_cover,precipitation',
         latitude:points.map(p=>p[0]).join(','),longitude:points.map(p=>p[1]).join(','),elevation:points.map(p=>p[2]).join(',')});
     if (daily) q.set('daily','weather_code,temperature_2m_min,temperature_2m_max,snowfall_sum');
     return 'https://api.open-meteo.com/v1/forecast?'+q;
@@ -25,7 +25,7 @@ function freshBulletin(r) {
     const age=Date.now()-Date.parse(r.date+'T12:00:00Z');
     return Number.isFinite(age) && age>=-86400000 && age<=3*86400000;
 }
-function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,isPinned,pinStation,goHome}) {
+function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,isPinned,pinStation,goHome,observations}) {
     const {stations,regions}=catalog;
     const byId=new Map(stations.map(s=>[s.id,s]));
     const expanded={alpin:new Set([0]),fond:new Set([0])};
@@ -62,22 +62,42 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         const highest=s.areas.reduce((best,a)=>a.points[1][2]>best.points[1][2]?a:best);
         return number(low)+' – '+(highest.approx?'≈ ':'')+number(highest.points[1][2])+' m';
     }
+    let summary=storage.get('snow.directory.v1',null),summaryRequest=null;
+    function directoryReport(station){
+        const list=summary?.value?.[station.id],local=getReport(station)?.value;
+        return local&&(!list||(local.date||'')>(list.date||''))?local:list||local;
+    }
+    async function loadSummaries(force=false){
+        if(summaryRequest||(!force&&recent(summary,30*60000)))return;
+        const ctl=new AbortController();summaryRequest=ctl;
+        try{
+            const data=await fetchJSON(service.base+'meteo74-neige?mode=directory',ctl.signal,15000,service.headers);
+            if(!Array.isArray(data.reports))return;
+            summary={at:Date.now(),value:Object.fromEntries(data.reports.filter(r=>byId.has(r.station_id)).map(r=>[r.station_id,r]))};
+            storage.set('snow.directory.v1',summary);
+            if(active&&!selected)document.querySelectorAll('#snow-groups [data-station]').forEach(paintPreview);
+        }catch{/* The last shared directory remains available. */}
+        finally{if(summaryRequest===ctl)summaryRequest=null;}
+    }
     function paintPreview(button) {
-        const s=byId.get(button.dataset.station);
-        const cache=getWeather(s.areas[0].points[0]);
-        const current=cache?.value?.current;
+        const s=byId.get(button.dataset.station),cur=getWeather(s.areas[0].points[0])?.value?.current;
+        const fresh=Number.isFinite(cur?.time)&&Math.abs(Date.now()/1000-cur.time)<3*3600;
         const temp=button.querySelector('.snow-preview-temp');
-        const now=Number.isFinite(current?.time) && Math.abs(Date.now()/1000-current.time)<3*3600;
-        temp.textContent=now && Number.isFinite(current.temperature_2m)?Math.round(current.temperature_2m)+'°':'';
-        const r=getReport(s)?.value, extra=button.querySelector('.snow-preview-extra');
-        const parts=[];
-        if (freshBulletin(r)) {
-            if (r.km) parts.push(number(r.km.open)+'/'+number(r.km.total)+' km ouverts');
-            else if (r.trails) parts.push(openCount(r.trails)+' pistes');
-            const first=r.snow?.[0];
-            if (Number.isFinite(first?.cm)) parts.push(first.cm+' cm'+(first.altitude?' à '+number(first.altitude)+' m':' · '+first.name));
+        temp.innerHTML=fresh&&Number.isFinite(cur.temperature_2m)?weather(cur.weather_code,!!cur.is_day,cur.cloud_cover,cur.precipitation)+'<b>'+Math.round(cur.temperature_2m)+'°</b>':'';
+        const r=directoryReport(s),parts=[];
+        const chip=(sym,label)=>'<span>'+icon(sym)+esc(label)+'</span>';
+        if(freshBulletin(r)){
+            const points=(r.snow||[]).filter(x=>Number.isFinite(x.cm)&&Number.isFinite(x.altitude)).sort((a,b)=>a.altitude-b.altitude);
+            for(const pt of points.length>1?[points[0],points.at(-1)]:points)
+                parts.push(chip('snowflake',number(pt.cm)+' cm à '+number(pt.altitude)+' m'));
+            if(r.km&&Number.isFinite(r.km.open))parts.push(chip('tracks',openCount(r.km)+' km ouverts'));
+            else if(r.trails&&Number.isFinite(r.trails.open))parts.push(chip('tracks',openCount(r.trails)+' pistes ouvertes'));
+            else if(r.lifts&&Number.isFinite(r.lifts.open))parts.push(chip('tracks',openCount(r.lifts)+' remontées'));
+            else if(r.areaStatus)parts.push(chip('mountain',r.areaStatus==='open'?'Domaine ouvert':'Domaine fermé'));
         }
-        extra.textContent=parts.join(' · ');extra.hidden=!parts.length;
+        if(!parts.length&&r?.seasonStart>=stampDay(Date.now()))parts.push(chip('calendar','Ouverture prévue le '+formatDate(r.seasonStart)));
+        const extra=button.querySelector('.snow-preview-extra');
+        extra.innerHTML=parts.join('')||'<small>'+(r?.date&&!freshBulletin(r)?'Dernier bulletin du '+esc(formatDate(r.date)):s.report?'Enneigement et ouverture non communiqués':'Bulletin non publié')+'</small>';
     }
     async function bulletin(s, signal, force=false) {
         const cache=getReport(s);
@@ -120,15 +140,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
                 const points=rows.filter(s=>forcePreview.has(s.id)||!recent(getWeather(s.areas[0].points[0]),20*60000)).map(s=>s.areas[0].points[0]);
                 const update=b=>{if(!signal.aborted&&b.isConnected)paintPreview(b);};
                 const temps=points.length?batchWeather(points,false,signal).then(()=>buttons.forEach(update)).catch(()=>{}):Promise.resolve();
-                let i=0;
-                async function next() {
-                    while(i<rows.length && !signal.aborted) {
-                        const at=i++,s=rows[at];
-                        if (!s.report) continue;
-                        try{await bulletin(s,signal,forcePreview.has(s.id));update(buttons[at]);}catch{}
-                    }
-                }
-                await Promise.all([temps,next(),next()]);
+                await temps;
             }
         } finally {if(listBusy===owner)listBusy=null;}
     }
@@ -156,7 +168,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         $('snow-groups').innerHTML=regionOrder.map(i=>{
             const rows=shown.filter(s=>s.region===i).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
             if (!rows.length) return '';
-            const cards=rows.map(s=>'<button class="snow-row" data-station="'+s.id+'"><span class="snow-row-copy"><b>'+esc(s.name)+'</b><small>'+esc(rangeLabel(s))+'</small><small class="snow-preview-extra" hidden></small></span><span class="snow-preview-temp"></span>'+icon('chevron')+'</button>').join('');
+            const cards=rows.map(s=>'<button class="snow-row" data-station="'+s.id+'"><span class="snow-row-copy"><b>'+esc(s.name)+'</b><small>'+esc(rangeLabel(s))+'</small></span><span class="snow-preview-temp"></span>'+icon('chevron')+'<span class="snow-preview-extra"></span></button>').join('');
             return '<details class="snow-group" data-region="'+i+'"'+(query||expanded[kind].has(i)?' open':'')+'><summary><span>'+esc(regions[i])+'</span><small>'+rows.length+'</small>'+icon('chevron')+'</summary><div>'+cards+'</div></details>';
         }).join('');
         const generation=lifetime;
@@ -165,7 +177,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
             if(!query){const id=Number(g.dataset.region);if(g.open)expanded[kind].add(id);else expanded[kind].delete(id);}
             watchVisible();
         };
-        watchVisible();
+        observations.resorts(shown,s=>detail(s),query);loadSummaries();watchVisible();
     }
     const metric=(title,value)=>'<div><small>'+esc(title)+'</small><strong>'+esc(value)+'</strong></div>';
     function paintConditions() {
@@ -179,9 +191,9 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         const source=catalog.summitSources[a.reference];
         const credit=$('summit-credit');credit.replaceChildren();
         if(source){const link=document.createElement('a');link.href=source;link.textContent='Référence du secteur';credit.append(link,document.createTextNode('. '));}
-        const condition=cur?C.condition(cur.weather_code,cur.is_day===1).label:'';
+        const condition=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation).label:'';
         const value=Number.isFinite(cur?.temperature_2m)?Math.round(cur.temperature_2m)+'°':'—';
-        const picture=cur?weather(cur.weather_code,cur.is_day===1):'';
+        const picture=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation):'';
         const status=cur?(stale?'Dernières données · ':'')+C.date(cur.time,zone,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):
             loadingWeather?'Chargement de la météo…':'Météo indisponible';
         $('snow-current').innerHTML='<div class="snow-current"><div><strong>'+value+'</strong><b>'+esc(condition)+'</b></div>'+picture+'</div><div class="snow-context"><span>'+esc(level?a.summit:a.landmark)+'</span><span>'+esc(status)+'</span></div>';
@@ -255,6 +267,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
     $('snow-pin').onclick=()=>{if(selected){pinStation(selected.id);paintPin();}};
     function detail(s,home=false) {
         if(!home)listY=window.scrollY;
+        observations.leave();
         fromHome=home;resetRequests();selected=s;area=0;level=0;
         $('snow-back-label').textContent=home?'Aujourd’hui':'Stations';paintPin();
         $('snow-directory').hidden=true;$('snow-detail').hidden=false;
@@ -296,9 +309,9 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         field('following').textContent=s.kind==='fond'?'Ski de fond':'Ski alpin';
         field('date').textContent=cur?C.date(cur.time,zone,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
         field('temperature').innerHTML=number(Number.isFinite(cur?.temperature_2m)?Math.round(cur.temperature_2m):null)+'<sup>°</sup>';
-        field('condition').textContent=cur?C.condition(cur.weather_code,cur.is_day===1).label:'Météo indisponible';
+        field('condition').textContent=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation).label:'Météo indisponible';
         field('feels').textContent=(s.kind==='fond'?'Repère nordique':'Départ')+' · '+number(base[2])+' m';
-        field('symbol').innerHTML=cur?weather(cur.weather_code,cur.is_day===1):'';
+        field('symbol').innerHTML=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation):'';
         node.classList.toggle('is-night',cur?.is_day===0);
         const stat=(key,label,val,symbol)=>{const b=field(key);b.textContent=val;b.nextElementSibling.textContent=label;const i=b.parentElement.previousElementSibling;if(i.dataset.icon!==symbol){i.dataset.icon=symbol;i.innerHTML=icon(symbol);}};
         const depth=measured?.cm??estimate, opened=valid&&(r.km||r.trails);
@@ -327,10 +340,11 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
     return {
         enter(id){active=true;if(byId.has(id)){detail(byId.get(id),true);return;}fromHome=false;directory();window.scrollTo(0,listY);},
         paintHome,loadHome,stopHome,
-        leave(){active=false;if(!selected)listY=window.scrollY;resetRequests();selected=null;},
+        leave(){active=false;observations.leave();summaryRequest?.abort();summaryRequest=null;if(!selected)listY=window.scrollY;resetRequests();selected=null;},
         refresh(force=false){
             if(!active)return;
             if(!selected){
+                observations.refresh(force);loadSummaries(force);
                 if(force){
                     const ids=[...visible].map(b=>b.dataset.station);
                     resetRequests();ids.forEach(id=>forcePreview.add(id));watchVisible();
