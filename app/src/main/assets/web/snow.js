@@ -12,9 +12,12 @@ function matches(station, region, query) {
 }
 function forecastURL(points, daily) {
     const q = new URLSearchParams({timezone:zone,timeformat:'unixtime',forecast_days:daily?'5':'1',
-        current:'temperature_2m,weather_code,is_day,snow_depth,cloud_cover,cloud_cover_low,precipitation,rain,showers,snowfall,wind_speed_10m,wind_gusts_10m',
+        current:'temperature_2m,weather_code,is_day,snow_depth,cloud_cover,cloud_cover_low,direct_normal_irradiance,precipitation,rain,showers,snowfall,wind_speed_10m,wind_gusts_10m',
         latitude:points.map(p=>p[0]).join(','),longitude:points.map(p=>p[1]).join(','),elevation:points.map(p=>p[2]).join(',')});
-    if (daily) q.set('daily','weather_code,temperature_2m_min,temperature_2m_max,snowfall_sum');
+    if(daily){
+        q.set('daily','weather_code,temperature_2m_min,temperature_2m_max,snowfall_sum');
+        q.set('hourly','cloud_cover,cloud_cover_low,is_day,sunshine_duration');
+    }
     return 'https://api.open-meteo.com/v1/forecast?'+q;
 }
 const openCount=v=>v.total==null?number(v.open):number(v.open)+' / '+number(v.total);
@@ -122,7 +125,8 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
             const key=pointKey(points[i]);
             const old=getWeather(points[i]);
             // A summary refresh must not give an old five-day forecast a new timestamp.
-            const value={current:row.current,daily:row.daily||old?.value?.daily,dailyAt:daily?Date.now():old?.value?.dailyAt};
+            const dayData=row.daily?{...row.daily,sky:row.daily.time.map((_,n)=>C.dailyClouds(row,n))}:old?.value?.daily;
+            const value={current:row.current,daily:dayData,dailyAt:daily?Date.now():old?.value?.dailyAt};
             save(weatherCache,'point',key,value);
         });
     }
@@ -203,7 +207,10 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         const err=weatherError?'<p class="snow-note">Actualisation météo indisponible. '+retry+'</p>':'';
         $('snow-days').innerHTML=ids.length?'<div class="snow-day-legend"><span>Jour</span><span>Min. / max.</span><span>Neige prévue</span></div>'+ids.map(({t,i})=>{
             const lo=daily.temperature_2m_min?.[i],hi=daily.temperature_2m_max?.[i],cm=daily.snowfall_sum?.[i];
-            return '<div class="snow-day"><span>'+weather(daily.weather_code?.[i])+'<b>'+esc(formatter.format(t*1000))+'</b></span><span>'+number(lo)+'° / '+number(hi)+'°</span><span>'+number(cm)+(Number.isFinite(cm)?' cm':'')+'</span></div>';
+            const sky=daily.sky?.[i],code=daily.weather_code?.[i];
+            const lowSky=[0,1,2,3].includes(code)&&C.hasLowCloudLayer(sky?.total,sky?.low);
+            const picture=lowSky?weather(code,true,sky.total,undefined,{cloud_cover_low:sky.low,sunnyBreaks:sky.sunnyBreaks}):weather(code);
+            return '<div class="snow-day"><span>'+picture+'<b>'+esc(formatter.format(t*1000))+'</b></span><span>'+number(lo)+'° / '+number(hi)+'°</span><span>'+number(cm)+(Number.isFinite(cm)?' cm':'')+'</span></div>';
         }).join('')+err:'<p class="snow-note">'+(loadingWeather?'Chargement des prévisions…':weatherError?'Prévisions indisponibles. '+retry:'Aucune prévision récente pour ce point.')+'</p>';
         // Estimates always refer to the currently selected forecast point.
         const depth=cur?.snow_depth;
@@ -245,7 +252,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
     }
     async function loadWeather(s,signal,force) {
         const points=s.areas.flatMap(a=>a.points);
-        if (!force && points.every(p=>{const v=getWeather(p)?.value;return v?.daily && recent({at:v.dailyAt},20*60000);}))return;
+        if (!force && points.every(p=>{const v=getWeather(p)?.value;return v?.daily?.sky && recent({at:v.dailyAt},20*60000);}))return;
         loadingWeather=true;weatherError=false;paintConditions();
         try{await batchWeather(points,true,signal);}
         catch{if(!signal.aborted)weatherError=true;}

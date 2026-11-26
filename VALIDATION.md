@@ -1,3 +1,11 @@
+# Météo74 0.7.6
+
+26 novembre 2026. APK Android `fr.meteo74.android`, version 20, signé avec le certificat de la 0.7.5. Taille de 9 445 482 octets, SHA-256 `d973dd61dab0a42645325e1c225e7da78d05901e7aa8d20ada2c5ef381a68f97`. Les ressources embarquées et l’alignement ZIP ont été contrôlés. Les 66 tests passent. Android Lint retourne six avertissements et zéro erreur.
+
+Dans la prévision du 26 novembre au soir, Reignier-Ésery et Scientrier présentent environ 85 % de couverture basse moyenne. Les deux fiches de la carte affichent « Nuages bas ». À Arthaz-Pont-Notre-Dame, la prévision du vendredi matin comporte des ouvertures ensoleillées et indique « Nuages bas et éclaircies ». La comparaison avec la 0.7.5 sur 816 combinaisons de localité et d’échéance rattache les 163 changements de libellé ou d’icône aux situations de nuages bas.
+
+La carte du paquet signé conserve les 24 icônes et les dix noms aux largeurs de 320, 393 et 740 pixels CSS. Le contrôle mesure un agrandissement de 20 % des icônes, sans recouvrement des noms. La mise à niveau des prévisions en cache, la consultation de J14 et la réouverture hors connexion ont été vérifiées.
+
 # Météo74 0.7.5
 
 26 novembre 2026. APK signé de `fr.meteo74.android`, version 19. Taille de 9 443 682 octets, SHA-256 `0e26c9ca80dd233ecaa6b2c3cf44f0b515e69b554c841c9ef9b0ee3a3fec11e1`. Le certificat correspond à celui de la 0.7.4. L’alignement ZIP et le contenu des ressources embarquées ont été vérifiés. Les 61 tests passent. Android Lint signale six avertissements et zéro erreur.

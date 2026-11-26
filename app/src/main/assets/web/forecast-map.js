@@ -3,6 +3,7 @@
     const F = root.MeteoForecastModel;
     const area = [[45.48,5.48],[46.62,7.24]];
     const freshFor = 2*3600000, keepFor = 24*3600000;
+    const summaryVersion = 2;
     const keyOf = town => town.lat+','+town.lon;
     const overlap = (a,b) => a[0]<b[2] && b[0]<a[2] && a[1]<b[3] && b[1]<a[3];
     function create({$,fetchJSON,storage,C}) {
@@ -25,7 +26,8 @@
         }
         function entry(key) {
             const record=cache.get(key);
-            return record && Date.now()-record.time<keepFor ? record : null;
+            if(!record||Date.now()-record.time>=keepFor)return null;
+            return record.version===summaryVersion||failed.has(key)||!navigator.onLine ? record : null;
         }
         function status() {
             if(!active||!period||!shown.size) return;
@@ -33,6 +35,7 @@
             const ready=records.filter(r=>r?.values[period.key]).length;
             if(request && ready<records.length) message('Chargement des prévisions…');
             else if(ready<records.length) message(ready?'Prévisions indisponibles pour certains lieux.':'Prévisions indisponibles. Touchez Actualiser pour réessayer.');
+            else if(records.some(r=>r.version!==summaryVersion)) message('Certaines prévisions datent d’avant la mise à jour. Touchez Actualiser pour les renouveler.');
             else if(records.some(r=>Date.now()-r.time>=freshFor)) message('Dernières prévisions enregistrées.');
             else message('');
         }
@@ -46,6 +49,13 @@
                     const range=document.createElement('b');
                     const lo=C.fmt(value.low),hi=C.fmt(value.high);
                     range.textContent=lo===hi?lo+' °C':lo+' à '+hi+' °C';details.append(document.createElement('br'),range);
+                }
+                if(C.finite(value.cloud)){
+                    const clouds=document.createElement('div');
+                    clouds.className='fm-tip-cloud';
+                    clouds.textContent='Couverture moyenne du ciel · '+C.fmt(value.cloud)+' %';
+                    if(C.finite(value.lowCloud))clouds.append(document.createElement('br'),'Nuages bas · '+C.fmt(value.lowCloud)+' % du ciel');
+                    details.append(clouds);
                 }
             } else details.textContent=request?'Chargement…':'Prévision indisponible';
             box.append(name,line,details);return box;
@@ -151,11 +161,11 @@
             const rows=detailed?await root.MeteoMapPlaces.placesIn(bounds,true):[];
             if(!active||token!==revision)return;
             const sites=[],keys=new Set(),unit=Math.min(size.x/860,size.y/803);
-            const baseWidth=Math.max(19,Math.min(45,57*unit));
+            const baseWidth=1.20*Math.max(19,Math.min(45,57*unit));
             function add(town,isDetail) {
                 const key=keyOf(town);if(keys.has(key)||!bounds.contains([town.lat,town.lon]))return;
                 const p=map.latLngToContainerPoint([town.lat,town.lon]);
-                const width=town.major?baseWidth:Math.max(17.5,baseWidth*52/57);
+                const width=town.major?baseWidth:Math.max(21,baseWidth*52/57);
                 if(p.x<width/2||p.x>size.x-width/2||p.y<width/2||p.y>size.y-width/2)return;
                 if(isDetail && sites.some(s=>p.distanceTo(s.p)<Math.max(49,baseWidth*1.6)))return;
                 keys.add(key);sites.push({town,key,p,width});
@@ -195,8 +205,8 @@
                     for(const dy of [gap+4,-gap-height-4]) {
                         for(const ratio of [-.5,-.8,-.2]) offsets.push([w*ratio,dy]);
                     }
-                    if(!detailed && size.x<335) {
-                        for(const vertical of [0,2,5]) {
+                    if(!detailed) {
+                        for(const vertical of [0,2,5,8]) {
                             for(let shift=2;shift<=w/2;shift+=2) {
                                 for(const dx of [-w/2+shift,-w/2-shift]) offsets.push([dx,gap+vertical],[dx,-gap-height-vertical]);
                             }
@@ -224,7 +234,7 @@
             const today=F.localNow().date,now=Date.now();
             const next=[...shown.values()].map(v=>v.town).filter(t=>{
                 const key=keyOf(t),r=cache.get(key);
-                return (failed.get(key)||0)<now && (!r||r.time<forceSince||r.date!==today||now-r.time>=freshFor);
+                return (failed.get(key)||0)<now && (!r||r.version!==summaryVersion||r.time<forceSince||r.date!==today||now-r.time>=freshFor);
             }).slice(0,12);
             if(!next.length){status();return;}
             const ctl=new AbortController();request=ctl;status();
@@ -234,7 +244,7 @@
                 const records=F.batch(response,next);
                 next.forEach((t,i)=>{
                     const key=keyOf(t),values=records.get(i);
-                    if(values) {cache.set(key,{time:Date.now(),date:today,values});failed.delete(key);}
+                    if(values) {cache.set(key,{time:Date.now(),date:today,version:summaryVersion,values});failed.delete(key);}
                     else failed.set(key,Date.now()+120000);
                 });
                 if(records.size)save();

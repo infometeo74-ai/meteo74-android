@@ -35,11 +35,11 @@
         }
         return list;
     }
-    const hourlyFields = ['weather_code','temperature_2m','cloud_cover','cloud_cover_low','is_day','precipitation','rain','showers','snowfall'];
+    const hourlyFields = ['weather_code','temperature_2m','cloud_cover','cloud_cover_low','is_day','sunshine_duration','precipitation','rain','showers','snowfall'];
     function url(towns) {
         const params = new URLSearchParams({
             latitude:towns.map(t => t.lat).join(','), longitude:towns.map(t => t.lon).join(','),
-            timezone:'Europe/Paris', forecast_days:14, past_hours:6, forecast_hours:72,
+            timezone:'Europe/Paris', forecast_days:14,
             hourly:hourlyFields.join(','),
             daily:'weather_code,temperature_2m_min,temperature_2m_max,cloud_cover_mean,precipitation_sum'
         });
@@ -47,7 +47,9 @@
     }
     function summary(code,day,cloud,precip,low,high,details) {
         const icon=C.weatherSymbol(code,day,cloud,precip,details);
-        return icon ? {icon,label:C.condition(code,day,cloud,precip,details).label,low,high} : null;
+        return icon ? {icon,label:C.condition(code,day,cloud,precip,details).label,low,high,
+            cloud:details?.lowSky&&C.finite(cloud)?Math.round(cloud):null,
+            lowCloud:details?.lowSky&&C.finite(details.cloud_cover_low)?Math.round(details.cloud_cover_low):null} : null;
     }
     function family(code) {
         if (code<=3) return code;
@@ -76,22 +78,25 @@
         const temperatures=indices.map(i=>h.temperature_2m?.[i]).filter(C.finite);
         const daylight=valid.filter(i=>h.is_day?.[i]===1).length;
         const day=kind!=='night' && kind!=='dawn' && daylight*2>=valid.length;
-        const details={};
-        for (const key of ['cloud_cover_low','rain','showers','snowfall']) details[key]=h[key]?.[representative];
-        return summary(h.weather_code[representative],day,h.cloud_cover?.[representative],h.precipitation?.[representative],
+        const code=h.weather_code[representative],dry=code>=0&&code<=3;
+        const clouds=C.periodClouds(h,indices);
+        const lowSky=dry&&C.hasLowCloudLayer(clouds.total,clouds.low);
+        const cover=lowSky?clouds.total:h.cloud_cover?.[representative];
+        const details={cloud_cover_low:dry?(lowSky?clouds.low:null):h.cloud_cover_low?.[representative],sunnyBreaks:clouds.sunnyBreaks,lowSky};
+        for (const key of ['rain','showers','snowfall']) details[key]=h[key]?.[representative];
+        return summary(code,day,cover,h.precipitation?.[representative],
             temperatures.length?Math.min(...temperatures):null,temperatures.length?Math.max(...temperatures):null,details);
     }
     function summarize(data) {
         const h=data?.hourly, d=data?.daily;
         if (!Array.isArray(d?.time)||!Array.isArray(d.weather_code)||!Array.isArray(h?.time)||!Array.isArray(h.weather_code)) return null;
         const values={};
-        d.time.forEach((date,i)=>{
-            const item=summary(d.weather_code[i],true,d.cloud_cover_mean?.[i],d.precipitation_sum?.[i],d.temperature_2m_min?.[i],d.temperature_2m_max?.[i]);
-            if(item) values[date+'/day']=item;
-        });
-        const hours=new Map();
+        const byDate=new Map(),hours=new Map();
         for (let i=0; i<h.time.length; i++) {
             const t=h.time[i], date=t.slice(0,10), hour=Number(t.slice(11,13));
+            if(!byDate.has(date))byDate.set(date,[]);
+            byDate.get(date).push(i);
+            if(d.time.length>=3 && date>d.time[2])continue;
             const kind=hour<6?'dawn':hour<12?'morning':hour<18?'afternoon':hour<22?'evening':'night';
             const keys=[date+'/'+kind];
             if(kind==='dawn') keys.push(plus(date,-1)+'/night');
@@ -100,6 +105,14 @@
                 hours.get(key).push(i);
             }
         }
+        d.time.forEach((date,i)=>{
+            const clouds=C.daytimeClouds(h,byDate.get(date)||[]);
+            const code=d.weather_code[i],lowSky=[0,1,2,3].includes(code)&&C.hasLowCloudLayer(clouds.total,clouds.low);
+            const total=(lowSky?clouds.total:null)??d.cloud_cover_mean?.[i];
+            const item=summary(code,true,total,d.precipitation_sum?.[i],d.temperature_2m_min?.[i],d.temperature_2m_max?.[i],
+                {cloud_cover_low:lowSky?clouds.low:null,sunnyBreaks:clouds.sunnyBreaks,lowSky});
+            if(item)values[date+'/day']=item;
+        });
         for (const [key,indices] of hours) {
             const item=hourSummary(h,indices,key.split('/')[1]);
             if(item) values[key]=item;

@@ -50,10 +50,58 @@ test('une nuit couvre ses deux dates civiles et les pictos changent selon la pé
     assert.equal(v['2026-12-09/day'],undefined);
 });
 test('une réponse groupée associe les mailles par indice, y compris en cas de données manquantes',()=>{
-    const a=sample(),b=sample();b.daily.weather_code[0]=0;
+    const a=sample(),b=sample();b.daily.weather_code[0]=0;b.hourly.cloud_cover.fill(0);
     const towns=[{lat:46.4,lon:6.1},{lat:46.2,lon:5.8}];
     const map=F.batch([{...b,location_id:1},{...a,location_id:0}],towns);
     assert.equal(map.get(0)['2026-11-27/day'].icon,'m74-006');
     assert.equal(map.get(1)['2026-11-27/day'].icon,'m74-001');
     assert.equal(F.batch([a,{location_id:1}],towns).size,1);
+});
+
+test('la même couche sur Reignier et Scientrier garde le même picto le 26 novembre au soir',()=>{
+    const time=[18,19,20,21].map(hour=>'2026-11-26T'+hour+':00');
+    const towns=[
+        {weather_code:[61,3,3,3],cloud_cover:[100,90,86,82],cloud_cover_low:[100,82,76,82]},
+        {weather_code:[3,3,3,3],cloud_cover:[90,85,100,85],cloud_cover_low:[81,75,100,85]}
+    ];
+    for(const town of towns){
+        const hourly={...town,time,is_day:[0,0,0,0],precipitation:[0,0,0,0]};
+        const value=F.summarize({hourly,daily:{time:['2026-11-26'],weather_code:[3]}})['2026-11-26/evening'];
+        assert.deepEqual([value.icon,value.label,value.cloud,value.lowCloud],['m74-012','Nuages bas',90,85]);
+    }
+});
+
+test('les trouées diurnes exigent du soleil prévu pendant la plage horaire',()=>{
+    const time=[6,7,8,9,10,11,12].map(hour=>'2026-11-27T'+String(hour).padStart(2,'0')+':00');
+    const hourly={time,weather_code:[3,3,2,2,2,3,3],cloud_cover:[92,84,81,68,51,84,100],
+        cloud_cover_low:[92,84,81,68,51,84,100],is_day:[0,0,1,1,1,1,1],sunshine_duration:[0,0,0,1600,3600,3600,3600]};
+    const evaluate=h=>F.summarize({hourly:h,daily:{time:['2026-11-27'],weather_code:[3]}})['2026-11-27/morning'];
+    assert.deepEqual([evaluate(hourly).icon,evaluate(hourly).label],['m74-098','Nuages bas et éclaircies']);
+    const grey=evaluate({...hourly,sunshine_duration:[3600,0,0,0,0,0,0]});
+    assert.equal(grey.icon,'m74-012');assert.doesNotMatch(grey.label,/fragment|éclaircie/iu);
+    const closed=evaluate({...hourly,cloud_cover:Array(7).fill(99),cloud_cover_low:Array(7).fill(95)});
+    assert.equal(closed.label,'Nuages bas');
+});
+
+test('une seule mesure de nuages bas ne décrit pas tout un créneau',()=>{
+    const time=Array.from({length:6},(_,i)=>'2026-11-27T'+String(i+6).padStart(2,'0')+':00');
+    const hourly={time,weather_code:time.map(()=>3),is_day:time.map(()=>1),
+        cloud_cover:time.map(()=>96),cloud_cover_low:[null,null,98,null,null,null]};
+    const item=F.summarize({hourly,daily:{time:['2026-11-27'],weather_code:[3]}})['2026-11-27/morning'];
+    assert.equal(item.lowCloud,null);assert.equal(item.label,'Ciel couvert');
+});
+
+test('la carte et la fiche utilisent la même couche basse en journée, même à J14',()=>{
+    const C=require(path.join(base,'core.js'));
+    const dates=Array.from({length:14},(_,i)=>'2026-12-'+String(i+1).padStart(2,'0'));
+    const time=dates.flatMap(date=>Array.from({length:24},(_,hour)=>date+'T'+String(hour).padStart(2,'0')+':00'));
+    const is_day=time.map(t=>Number(t.slice(11,13))>=8&&Number(t.slice(11,13))<17?1:0);
+    const hourly={time,is_day,weather_code:time.map(()=>3),cloud_cover:is_day.map(v=>v?93:10),
+        cloud_cover_low:is_day.map(v=>v?81:0),sunshine_duration:time.map(()=>0)};
+    const daily={time:dates,weather_code:dates.map(()=>3)};
+    const summary=F.summarize({hourly,daily})['2026-12-14/day'];
+    const unix=s=>Date.parse(s+'Z')/1000;
+    const local=C.dailyClouds({hourly:{...hourly,time:time.map(unix)},daily:{...daily,time:dates.map(t=>unix(t+'T00:00'))}},13);
+    assert.deepEqual([summary.cloud,summary.lowCloud],[local.total,local.low]);
+    assert.equal(summary.label,'Nuages bas');
 });

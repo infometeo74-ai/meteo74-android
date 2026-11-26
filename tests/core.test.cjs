@@ -76,3 +76,18 @@ test('Combined conditions use the corrected sheets only with matching measuremen
  assert.equal(C.weatherSymbol(95,true,100,1),'m74-063');
  assert.equal(C.weatherSymbol(3,false,100,0,{cloud_cover_low:94}),'m74-012');
 });
+
+test('la couche basse, le ciel plus élevé et le brouillard gardent des symboles distincts',()=>{
+ const describe=(code,cloud,low,day=true,irradiance=0)=>{
+  const details={cloud_cover_low:low,direct_normal_irradiance:irradiance};
+  return [C.weatherSymbol(code,day,cloud,0,details),C.condition(code,day,cloud,0,details).label];
+ };
+ for(const low of [82,84,85,86])assert.deepEqual(describe(3,94,low),['m74-012','Nuages bas']);
+ assert.deepEqual(describe(2,93,60),['m74-012','Nuages bas']);
+ assert.deepEqual(describe(3,96,8),['m74-006','Ciel couvert']);
+ assert.deepEqual(describe(3,null,93),['m74-012','Nuages bas']);
+ assert.deepEqual(describe(2,60,45,true,210),['m74-098','Nuages bas et éclaircies']);
+ assert.deepEqual(describe(2,60,45,false,210),['m74-099','Nuages bas épars']);
+ assert.equal(describe(45,96,96)[1],'Brouillard');
+ assert.equal(describe(2,60,45)[0],'m74-012');
+});
