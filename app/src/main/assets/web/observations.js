@@ -3,7 +3,6 @@
 const Field=root.ObservationField,{grid,metrics}=Field;
 const bounds=[[grid.south,grid.west],[grid.north,grid.east]];
 const domain=[[45.679,5.802],[46.411,7.048]];
-const cityLabels=[['Thonon',46.371,6.477],['Annecy',45.899,6.127],['Annemasse',46.194,6.236],['Cluses',46.061,6.579],['Chamonix',45.923,6.869]];
 const formatter=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
 const when=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 const stamp=t=>when.format(t).replace(' à ',' · ');
@@ -59,7 +58,7 @@ function rainWorker(bytes,dem,signal){
  });
 }
 function create({$,icon,escape,fetchJSON,storage,service}){
- let active=false,map,terrain,shape,demPromise,geometryError=false,layer,labels,field=null,fieldKey='';
+ let active=false,map,terrain,shape,demPromise,geometryError=false,layer,refreshNames,field=null,fieldKey='';
  let metric='temp',resortStations=null,onStation=null,markers=null,lastQuery='',lastPanel=null;
  const bank={};
  let request=null,rainRequest=null,modelRequest=null,modelBusy=false,modelFailed=false,lastModelAttempt=0,modelRetry=null,interval;
@@ -77,12 +76,9 @@ function create({$,icon,escape,fetchJSON,storage,service}){
   map=L.map('obs-map',{attributionControl:true,zoomSnap:.25,zoomDelta:1,minZoom:7,maxZoom:14,scrollWheelZoom:false});
   map.attributionControl.setPrefix(false);
   markers=L.layerGroup().addTo(map);map.on('zoomend',drawFlakes);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxNativeZoom:19,className:'obs-basemap',attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  refreshNames=root.MeteoMapPlaces.attach(map);
   map.createPane('obsTerrain').style.zIndex=310;map.createPane('obsField').style.zIndex=325;
-  map.createPane('obsLine').style.zIndex=335;map.createPane('obsTowns').style.zIndex=345;
-  map.getPane('obsTowns').style.pointerEvents='none';
-  labels=L.layerGroup().addTo(map);
-  for(const [name,lat,lon] of cityLabels)L.marker([lat,lon],{pane:'obsTowns',interactive:false,keyboard:false,icon:L.divIcon({className:'obs-city',iconSize:[60,12],iconAnchor:[-2,-3],html:'<span>'+name+'</span>'})}).addTo(labels);
+  map.createPane('obsLine').style.zIndex=335;
   fit();
   map.on('click',e=>{
    if(!field)return;
@@ -242,6 +238,7 @@ function create({$,icon,escape,fetchJSON,storage,service}){
  function drawFlakes(){
   if(!markers)return;
   markers.clearLayers();
+  refreshNames?.();
   if(!resortStations)return;
   const groups=[];
   for(const station of resortStations){

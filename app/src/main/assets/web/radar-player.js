@@ -70,8 +70,8 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     function initMap(){
         const chosen=place(),p=chosen||{latitude:46.02,longitude:6.38};map=L.map('map',{minZoom:4,maxZoom:14,zoomSnap:.05,zoomAnimation:false,fadeAnimation:false}).setView([p.latitude,p.longitude],8);
         for(const [name,z] of [['base',200],['relief',300],['department',320],['radar',350]]){const pane=map.createPane(name);pane.style.zIndex=z;pane.style.pointerEvents='none';}
-        map.getPane('base').classList.add('muted-basemap');map.attributionControl.setPrefix(false);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,pane:'base',attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a>'}).addTo(map);
+        map.attributionControl.setPrefix(false);
+        MeteoMapPlaces.attach(map,'base');
         map.attributionControl.addAttribution('Relief <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen</a>');
         paint=surface(map.getPane('radar'),'precip-layer','div');paint.style.opacity=opacity;painter=RadarPlayback.createPainter(paint);shade=surface(map.getPane('relief'),'relief-layer');
         marker=L.circleMarker([p.latitude,p.longitude],{radius:5,color:'#fff',weight:2,fillColor:'#164967',fillOpacity:1,interactive:false});

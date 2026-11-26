@@ -8,7 +8,6 @@
 .obs-filters .icon{width:15px;height:15px}
 .obs-map-card{position:relative;border-radius:18px;overflow:hidden;border:1px solid #cbdce0;background:#fff;box-shadow:0 3px 13px #183d4e0a}
 #obs-map{height:clamp(285px,47dvh,485px);background:#e7efeb;isolation:isolate}
-#obs-map .obs-basemap{filter:saturate(.4) contrast(.86) brightness(1.09)}
 #obs-map .leaflet-control-zoom{border:1px solid #c9d6da;box-shadow:0 1px 5px #2539431a;overflow:hidden;border-radius:9px}
 #obs-map .leaflet-control-zoom a{color:#284e58}
 #obs-map .leaflet-control-attribution{font-size:8px;color:#536a72}
@@ -23,7 +22,6 @@
 .obs-caption strong{font-size:13px;color:#224f5d}
 .obs-caption p{font-size:12px;color:#556d79;margin:2px 0}
 #obs-alert{color:#93531c}
-.obs-city span{color:#466069;text-shadow:0 1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff;font:650 10px/12px system-ui,sans-serif;white-space:nowrap}
 #obs-station-detail{padding:0 2px 8px}
 #view-map .weather-credits{margin-top:13px}
 @media(max-width:359px){.bottom-nav>button{font-size:10px;padding-left:1px;padding-right:1px}.obs-heading h1{font-size:23px}.obs-key{padding-left:10px;padding-right:10px}}

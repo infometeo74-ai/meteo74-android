@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.2 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.3 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.2 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.2.apk)
+[Télécharger Météo74 0.7.3 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.3.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -19,6 +19,10 @@ Les villes, la position suivie et les stations de ski apparaissent dans une list
 Les pictogrammes des villes et des stations tiennent compte de la nébulosité. Un code d’averses peut ainsi s’afficher sous un ciel couvert. Une couverture inconnue produit un pictogramme de précipitations neutre. Les prévisions quotidiennes des villes utilisent la couverture moyenne des heures de jour.
 
 ## Cartes météo
+
+Sur les radars, les cartes d’observations et la carte des stations de ski, les noms des villes se superposent aux données météo. Un point indique leur emplacement. Les petites communes apparaissent au zoom et les libellés proches se répartissent selon la place disponible. Les noms sont embarqués dans l’application.
+
+Le fond vectoriel provient d’[OpenStreetMap](https://www.openstreetmap.org/copyright). Les communes françaises sont géolocalisées en priorité à leur mairie avec l’[API Découpage administratif](https://geo.api.gouv.fr/). Les autres localités proviennent de [GeoNames](https://www.geonames.org/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), avec les noms français de [Natural Earth](https://www.naturalearthdata.com/) lorsqu’ils sont disponibles. Le script `artwork/prepare-map-places.py` reconstruit l’index des noms.
 
 Dans **Carte**, choisir la température, la pluie sur une heure, le vent moyen, les rafales, l’humidité, la pression ou la hauteur de neige au sol. Les couleurs couvrent la Haute-Savoie. Toucher un endroit affiche la valeur locale estimée. Le modèle Météo-France fourni par Open-Meteo est échantillonné en 132 points, puis interpolé sur le relief embarqué. Des gradients locaux corrigent l’effet de l’altitude sur la température. Les écarts entre les mesures et le modèle ajustent automatiquement la surface à proximité des stations, avec une influence qui diminue selon la distance, l’écart d’altitude et le décalage horaire.
 

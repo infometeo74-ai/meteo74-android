@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
         controller.setAppearanceLightNavigationBars(true);
         updater=new AppUpdater(this);
         WebSettings settings = web.getSettings();
+        settings.setUserAgentString(settings.getUserAgentString() + " Meteo74/" + UpdateConfig.VERSION_NAME + " (fr.meteo74.android)");
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setGeolocationEnabled(true);

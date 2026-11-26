@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 16,
-  "versionName": "0.7.2",
-  "file": "Meteo74-0.7.2.apk",
-  "size": 6092292,
-  "sha256": "be5eb8057b7597660417d8fe0278ff49a2535c8e74ba5acd77359abab421562e",
-  "notes": "118 webcams dans 48 lieux de Haute-Savoie, avec recherche. Lecture radar stabilisée sur les trois cartes. Nouvelle collection de 113 icônes transparentes, avec le soleil voilé corrigé."
+  "versionCode": 17,
+  "versionName": "0.7.3",
+  "file": "Meteo74-0.7.3.apk",
+  "size": 9256947,
+  "sha256": "089b9cf05459fce59d416fdcbb55afde2307c374df4011bcc0275ebedf7d3151",
+  "notes": "Noms des villes au premier plan sur les trois radars, les cartes météo et la neige. Les communes et les villages apparaissent en zoomant. Les 279 communes de Haute-Savoie sont intégrées."
 }

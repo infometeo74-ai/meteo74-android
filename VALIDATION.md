@@ -1,3 +1,11 @@
+# Météo74 0.7.3
+
+26 novembre 2026. APK signé de `fr.meteo74.android`, version 17. Taille de 9 256 947 octets et SHA-256 `089b9cf05459fce59d416fdcbb55afde2307c374df4011bcc0275ebedf7d3151`. Le certificat est identique à celui de la 0.7.2. L’alignement et les ressources embarquées ont été vérifiés. Les 55 tests passent. Android Lint signale cinq avertissements et zéro erreur.
+
+Les essais en émulation mobile portent sur les fichiers extraits de l’APK. Les noms restent lisibles au-dessus des trois radars, des sept champs météo et de la carte des stations. Leurs rectangles ne se chevauchent pas dans les vues contrôlées. Les noms restent immobiles pendant la relecture et le toucher ouvre toujours la mesure radar ou la station de ski. La vue départementale affiche notamment Annecy et Thonon-les-Bains. À plus grande échelle, Reignier-Ésery, Pers-Jussy et Scientrier sont visibles. Les 279 communes du département ont été rapprochées de leurs coordonnées dans le référentiel officiel.
+
+Le fond utilise les tuiles vectorielles d’OpenStreetMap. Sur un écran de 350 pixels de large, même en bloquant le téléchargement des tuiles, les libellés des communes s’affichent à partir des fichiers embarqués.
+
 # Météo74 0.7.2
 
 26 novembre 2026. L’APK signé de l’application `fr.meteo74.android` porte le numéro 16 et utilise le même certificat que la 0.7.1. Taille de 6 092 292 octets, SHA-256 `be5eb8057b7597660417d8fe0278ff49a2535c8e74ba5acd77359abab421562e`. L’alignement ZIP et les fichiers embarqués ont été contrôlés. Les 53 tests passent. Android Lint signale cinq avertissements et zéro erreur.
