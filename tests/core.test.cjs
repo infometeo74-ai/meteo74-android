@@ -16,13 +16,13 @@ test('All weather codes resolve to bundled high-density artwork; fog, frost and 
   const bytes=fs.readFileSync(path.join(root,file));
   assert.equal(bytes.toString('ascii',8,12),'WEBP');
   assert.equal(bytes.toString('ascii',12,16),'VP8X');
-  assert.equal(bytes.readUIntLE(24,3)+1,512);
-  assert.equal(bytes.readUIntLE(27,3)+1,512);
+  assert.equal(bytes.readUIntLE(24,3)+1,336);
+  assert.equal(bytes.readUIntLE(27,3)+1,336);
   files.add(file);
  }
  const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../collection.json')));
- assert.equal(catalogue.length,58);
- assert.equal(new Set(catalogue.map(item=>item.id)).size,58);
+ assert.equal(catalogue.length,113);
+ assert.equal(new Set(catalogue.map(item=>item.id)).size,113);
  for(const item of catalogue){assert.ok(item.label);files.add(item.file);}
  assert.deepEqual([...files].sort(),fs.readdirSync(root).sort());
  for(const code of [0,1,2,80,81,82,85,86,95])assert.notEqual(C.weatherSymbol(code,true,35),C.weatherSymbol(code,false,35));
@@ -55,14 +55,22 @@ test('Chart range works for constant, negative and missing series',()=>{
 
 test('Overcast showers respect cloud cover, dry intervals, unknown cover and night',()=>{
  for(const daylight of [true,false]){
-  assert.equal(C.weatherSymbol(80,daylight,100,.2),'wx-rain-light');
-  assert.equal(C.weatherSymbol(86,daylight,98,.4),'wx-snow-heavy');
-  assert.equal(C.weatherSymbol(80,daylight,100,0),'wx-overcast');
+  assert.equal(C.weatherSymbol(80,daylight,100,.2),'m74-021');
+  assert.equal(C.weatherSymbol(86,daylight,98,.4),'m74-043');
+  assert.equal(C.weatherSymbol(80,daylight,100,0),'m74-006');
   assert.equal(C.condition(80,daylight,100,.2).label,'Couvert, averses');
   assert.equal(C.condition(61,daylight,100,0).label,'Couvert, pluie intermittente');
-  assert.equal(C.weatherSymbol(80,daylight,undefined,.3),'wx-rain-light');
+  assert.equal(C.weatherSymbol(80,daylight,undefined,.3),'m74-021');
   assert.equal(C.weatherSymbol(null,daylight,100),null);
  }
- assert.equal(C.weatherSymbol(80,true,35,.2),'wx-showers-light-day');
+ assert.equal(C.weatherSymbol(80,true,35,.2),'m74-025');
  assert.equal(C.condition(2,true,99).label,'Ciel couvert');
+});
+
+test('Combined conditions use the corrected sheets only with matching measurements',()=>{
+ assert.equal(C.weatherSymbol(63,true,90,1,{rain:1,snowfall:0.2,cloud_cover_low:95}),'m74-112');
+ assert.equal(C.weatherSymbol(73,true,90,1,{wind_speed_10m:48}),'m74-047');
+ assert.equal(C.weatherSymbol(73,true,90,1,{temperature_2m:-2}),'m74-038');
+ assert.equal(C.weatherSymbol(95,true,100,1),'m74-063');
+ assert.equal(C.weatherSymbol(3,false,100,0,{cloud_cover_low:94}),'m74-012');
 });

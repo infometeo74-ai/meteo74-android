@@ -12,7 +12,7 @@ function matches(station, region, query) {
 }
 function forecastURL(points, daily) {
     const q = new URLSearchParams({timezone:zone,timeformat:'unixtime',forecast_days:daily?'5':'1',
-        current:'temperature_2m,weather_code,is_day,snow_depth,cloud_cover,precipitation',
+        current:'temperature_2m,weather_code,is_day,snow_depth,cloud_cover,cloud_cover_low,precipitation,rain,showers,snowfall,wind_speed_10m,wind_gusts_10m',
         latitude:points.map(p=>p[0]).join(','),longitude:points.map(p=>p[1]).join(','),elevation:points.map(p=>p[2]).join(',')});
     if (daily) q.set('daily','weather_code,temperature_2m_min,temperature_2m_max,snowfall_sum');
     return 'https://api.open-meteo.com/v1/forecast?'+q;
@@ -83,7 +83,7 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         const s=byId.get(button.dataset.station),cur=getWeather(s.areas[0].points[0])?.value?.current;
         const fresh=Number.isFinite(cur?.time)&&Math.abs(Date.now()/1000-cur.time)<3*3600;
         const temp=button.querySelector('.snow-preview-temp');
-        temp.innerHTML=fresh&&Number.isFinite(cur.temperature_2m)?weather(cur.weather_code,!!cur.is_day,cur.cloud_cover,cur.precipitation)+'<b>'+Math.round(cur.temperature_2m)+'°</b>':'';
+        temp.innerHTML=fresh&&Number.isFinite(cur.temperature_2m)?weather(cur.weather_code,!!cur.is_day,cur.cloud_cover,cur.precipitation,cur)+'<b>'+Math.round(cur.temperature_2m)+'°</b>':'';
         const r=directoryReport(s),parts=[];
         const chip=(sym,label)=>'<span>'+icon(sym)+esc(label)+'</span>';
         if(freshBulletin(r)){
@@ -191,9 +191,9 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         const source=catalog.summitSources[a.reference];
         const credit=$('summit-credit');credit.replaceChildren();
         if(source){const link=document.createElement('a');link.href=source;link.textContent='Référence du secteur';credit.append(link,document.createTextNode('. '));}
-        const condition=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation).label:'';
+        const condition=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation,cur).label:'';
         const value=Number.isFinite(cur?.temperature_2m)?Math.round(cur.temperature_2m)+'°':'—';
-        const picture=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation):'';
+        const picture=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation,cur):'';
         const status=cur?(stale?'Dernières données · ':'')+C.date(cur.time,zone,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):
             loadingWeather?'Chargement de la météo…':'Météo indisponible';
         $('snow-current').innerHTML='<div class="snow-current"><div><strong>'+value+'</strong><b>'+esc(condition)+'</b></div>'+picture+'</div><div class="snow-context"><span>'+esc(level?a.summit:a.landmark)+'</span><span>'+esc(status)+'</span></div>';
@@ -309,9 +309,9 @@ function create({$,C,storage,icon,weather,escape:esc,fetchJSON,catalog,service,i
         field('following').textContent=s.kind==='fond'?'Ski de fond':'Ski alpin';
         field('date').textContent=cur?C.date(cur.time,zone,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
         field('temperature').innerHTML=number(Number.isFinite(cur?.temperature_2m)?Math.round(cur.temperature_2m):null)+'<sup>°</sup>';
-        field('condition').textContent=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation).label:'Météo indisponible';
+        field('condition').textContent=cur?C.condition(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation,cur).label:'Météo indisponible';
         field('feels').textContent=(s.kind==='fond'?'Repère nordique':'Départ')+' · '+number(base[2])+' m';
-        field('symbol').innerHTML=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation):'';
+        field('symbol').innerHTML=cur?weather(cur.weather_code,cur.is_day===1,cur.cloud_cover,cur.precipitation,cur):'';
         node.classList.toggle('is-night',cur?.is_day===0);
         const stat=(key,label,val,symbol)=>{const b=field(key);b.textContent=val;b.nextElementSibling.textContent=label;const i=b.parentElement.previousElementSibling;if(i.dataset.icon!==symbol){i.dataset.icon=symbol;i.innerHTML=icon(symbol);}};
         const depth=measured?.cm??estimate, opened=valid&&(r.km||r.trails);

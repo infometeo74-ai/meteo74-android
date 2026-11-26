@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.7.0 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.7.1 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -20,8 +20,8 @@ const paths={snowflake:'<path d="M12 2v20M3.4 7l17.2 10M3.4 17L20.6 7M9 4l3 2 3-
 const icon=name=>'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.info)+'</svg>';
 function icons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));}icons();
 function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function weather(code,day=true,cloud,precip){
- const id=C.weatherSymbol(code,day,cloud,precip),label=escape(C.condition(code,day,cloud,precip).label);
+function weather(code,day=true,cloud,precip,details){
+ const id=C.weatherSymbol(code,day,cloud,precip,details),label=escape(C.condition(code,day,cloud,precip,details).label);
  if(!id)return '<span class="weather-icon weather-unavailable" role="img" aria-label="'+label+'">—</span>';
  return '<img class="weather-icon" src="assets/weather/hd/'+id+'.webp" width="512" height="512" alt="'+label+'" decoding="async">';
 }
@@ -38,7 +38,7 @@ collection.addEventListener('toggle',async()=>{
   for(const item of entries){
    const figure=document.createElement('figure'),caption=document.createElement('figcaption'),img=new Image();
    caption.textContent=item.label;img.src='assets/weather/hd/'+item.file;img.width=512;img.height=512;
-   img.alt='';img.loading='lazy';img.decoding='async';figure.title=item.id+'.png';
+   img.alt='';img.loading='lazy';img.decoding='async';figure.title=item.label;
    figure.append(caption,img);fragment.append(figure);
   }
   gallery.replaceChildren(fragment);gallery.dataset.loaded='yes';
@@ -93,9 +93,9 @@ function paintCard(node,entry,record) {
     node.classList.toggle('is-night',c?.is_day===0);
     field('date').textContent=c?(stale?'Données du ':'')+C.date(c.time,d.timezone,{day:'numeric',month:'short'})+' · '+C.clock(c.time,d.timezone):'';
     field('temperature').innerHTML=(c?C.fmt(c.temperature_2m):'—')+'<sup>°</sup>';
-    field('condition').textContent=c?C.condition(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation).label:!p?'Recherche de la position…':errors.get(C.placeKey(p))||'Chargement…';
+    field('condition').textContent=c?C.condition(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation,c).label:!p?'Recherche de la position…':errors.get(C.placeKey(p))||'Chargement…';
     field('feels').textContent=following&&state.geoMessage?state.geoMessage:c?'Ressenti '+C.fmt(c.apparent_temperature)+'° · '+C.fmt(d.elevation)+' m':'';
-    field('symbol').innerHTML=c?weather(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation):'';
+    field('symbol').innerHTML=c?weather(c.weather_code,c.is_day!==0,c.cloud_cover,c.precipitation,c):'';
     field('wind').textContent=c?C.fmt(c.wind_speed_10m)+' km/h':'—';
     field('humidity').textContent=c?C.fmt(c.relative_humidity_2m)+' %':'—';
     field('range').textContent=di<0?'—':C.fmt(a.temperature_2m_min[di])+'° / '+C.fmt(a.temperature_2m_max[di])+'°';
@@ -232,7 +232,7 @@ async function loadFocus(force=false) {
 }
 function todayIndex(d){const now=C.date(Date.now()/1000,d.timezone,{year:'numeric',month:'2-digit',day:'2-digit'});return d.daily.time.findIndex(t=>C.date(t,d.timezone,{year:'numeric',month:'2-digit',day:'2-digit'})===now);}
 function renderWeather(){const d=state.data;if(!d)return;const c=d.current,tz=d.timezone,di=todayIndex(d),a=d.daily;
- const hours=C.hours(d);$('hourly').innerHTML=hours.length?hours.map((h,i)=>'<article class="hour-card"><span>'+C.date(h.time,tz,{hour:'2-digit'})+'</span>'+weather(h.code,h.isDay,h.cloud,h.precip)+'<strong>'+C.fmt(h.temperature)+'°</strong><span class="rain-prob">'+icon('drop')+C.fmt(h.probability)+' %</span></article>').join(''):'<p class="empty-text">Les prévisions enregistrées ne couvrent plus les prochaines heures. Actualisez la météo.</p>';
+ const hours=C.hours(d);$('hourly').innerHTML=hours.length?hours.map((h,i)=>'<article class="hour-card"><span>'+C.date(h.time,tz,{hour:'2-digit'})+'</span>'+weather(h.code,h.isDay,h.cloud,h.precip,h.details)+'<strong>'+C.fmt(h.temperature)+'°</strong><span class="rain-prob">'+icon('drop')+C.fmt(h.probability)+' %</span></article>').join(''):'<p class="empty-text">Les prévisions enregistrées ne couvrent plus les prochaines heures. Actualisez la météo.</p>';
  drawChart(hours,tz);
  const uv=di<0?null:a.uv_index_max[di],uvLabel=!C.finite(uv)?'Non disponible':uv<3?'Faible':uv<6?'Modéré':uv<8?'Élevé':uv<11?'Très élevé':'Extrême';
  const detail=(symbol,title,value,unit,sub)=>'<article class="detail-card"><div class="detail-label">'+icon(symbol)+title+'</div><div class="detail-value">'+value+'<small>'+unit+'</small></div><p>'+sub+'</p></article>';

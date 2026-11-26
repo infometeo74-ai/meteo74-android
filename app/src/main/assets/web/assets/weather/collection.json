@@ -1,292 +1,567 @@
 [
   {
-    "id": "00",
-    "label": "Orage pluvieux",
-    "file": "wx-thunder-day.webp"
-  },
-  {
-    "id": "01",
-    "label": "Vent et pluie",
-    "file": "collection-01.webp"
-  },
-  {
-    "id": "02",
-    "label": "Vent et pluie",
-    "file": "collection-01.webp"
-  },
-  {
-    "id": "03",
-    "label": "Orage pluvieux",
-    "file": "wx-thunder-day.webp"
-  },
-  {
-    "id": "04",
-    "label": "Orage pluvieux",
-    "file": "wx-thunder-day.webp"
-  },
-  {
-    "id": "05",
-    "label": "Pluie et neige",
-    "file": "collection-05.webp"
-  },
-  {
-    "id": "06",
-    "label": "Grains de glace",
-    "file": "wx-snow-grains.webp"
-  },
-  {
-    "id": "07",
-    "label": "Pluie et flocons",
-    "file": "collection-07.webp"
-  },
-  {
-    "id": "08",
-    "label": "Bruine fine",
-    "file": "wx-drizzle-light.webp"
-  },
-  {
-    "id": "09",
-    "label": "Bruine",
-    "file": "wx-drizzle.webp"
-  },
-  {
-    "id": "10",
-    "label": "Bruine soutenue",
-    "file": "wx-drizzle-heavy.webp"
-  },
-  {
-    "id": "11",
-    "label": "Pluie",
-    "file": "wx-rain.webp"
-  },
-  {
-    "id": "12",
-    "label": "Pluie soutenue",
-    "file": "wx-rain-heavy.webp"
-  },
-  {
-    "id": "13",
-    "label": "Neige faible",
-    "file": "wx-snow-light.webp"
-  },
-  {
-    "id": "14",
-    "label": "Neige",
-    "file": "wx-snow.webp"
-  },
-  {
-    "id": "15",
-    "label": "Flocons épars",
-    "file": "collection-15.webp"
-  },
-  {
-    "id": "16",
-    "label": "Neige forte",
-    "file": "wx-snow-heavy.webp"
-  },
-  {
-    "id": "17",
-    "label": "Pluie et éclair",
-    "file": "collection-17.webp"
-  },
-  {
-    "id": "19",
-    "label": "Poussière en suspension",
-    "file": "collection-19.webp"
-  },
-  {
-    "id": "20",
-    "label": "Banc de brume",
-    "file": "wx-fog.webp"
-  },
-  {
-    "id": "21",
-    "label": "Brume de poussière",
-    "file": "collection-21.webp"
-  },
-  {
-    "id": "22",
-    "label": "Fumée",
-    "file": "collection-22.webp"
-  },
-  {
-    "id": "23",
-    "label": "Vent",
-    "file": "collection-23.webp"
-  },
-  {
-    "id": "24",
-    "label": "Vent",
-    "file": "collection-23.webp"
-  },
-  {
-    "id": "25",
-    "label": "Glace",
-    "file": "collection-25.webp"
-  },
-  {
-    "id": "26",
-    "label": "Ciel couvert",
-    "file": "wx-overcast.webp"
-  },
-  {
-    "id": "27",
-    "label": "Éclaircies nocturnes",
-    "file": "wx-broken-night.webp"
-  },
-  {
-    "id": "28",
-    "label": "Éclaircies",
-    "file": "wx-broken-day.webp"
-  },
-  {
-    "id": "29",
-    "label": "Nuit peu nuageuse",
-    "file": "wx-mostly-clear-night.webp"
-  },
-  {
-    "id": "30",
-    "label": "Peu nuageux",
-    "file": "wx-mostly-clear-day.webp"
-  },
-  {
-    "id": "031",
-    "label": "Orage neigeux",
-    "file": "collection-031.webp"
-  },
-  {
-    "id": "31",
-    "label": "Nuit dégagée",
-    "file": "wx-clear-night.webp"
-  },
-  {
-    "id": "32",
+    "id": 1,
     "label": "Soleil",
-    "file": "wx-clear-day.webp"
+    "file": "m74-001.webp"
   },
   {
-    "id": "33",
-    "label": "Lune voilée",
-    "file": "collection-33.webp"
-  },
-  {
-    "id": "34",
+    "id": 2,
     "label": "Soleil voilé",
-    "file": "collection-34.webp"
+    "file": "m74-002.webp"
   },
   {
-    "id": "35",
-    "label": "Éclair et averses",
-    "file": "collection-35.webp"
+    "id": 3,
+    "label": "Peu nuageux · jour",
+    "file": "m74-003.webp"
   },
   {
-    "id": "36",
-    "label": "Chaleur",
-    "file": "collection-36.webp"
+    "id": 4,
+    "label": "Éclaircies · jour",
+    "file": "m74-004.webp"
   },
   {
-    "id": "37",
-    "label": "Averse orageuse",
-    "file": "collection-37.webp"
+    "id": 5,
+    "label": "Nuageux · jour",
+    "file": "m74-005.webp"
   },
   {
-    "id": "38",
-    "label": "Averse orageuse",
-    "file": "collection-37.webp"
+    "id": 6,
+    "label": "Couvert",
+    "file": "m74-006.webp"
   },
   {
-    "id": "39",
-    "label": "Forte averse au soleil",
-    "file": "wx-showers-heavy-day.webp"
+    "id": 7,
+    "label": "Nuit claire",
+    "file": "m74-007.webp"
   },
   {
-    "id": "40",
-    "label": "Pluie soutenue",
-    "file": "wx-rain-heavy.webp"
+    "id": 8,
+    "label": "Lune voilée",
+    "file": "m74-008.webp"
   },
   {
-    "id": "041",
-    "label": "Neige et éclair",
-    "file": "collection-041.webp"
+    "id": 9,
+    "label": "Peu nuageux · nuit",
+    "file": "m74-009.webp"
   },
   {
-    "id": "41",
+    "id": 10,
+    "label": "Éclaircies · nuit",
+    "file": "m74-010.webp"
+  },
+  {
+    "id": 11,
+    "label": "Nuageux · nuit",
+    "file": "m74-011.webp"
+  },
+  {
+    "id": 12,
+    "label": "Nuages bas",
+    "file": "m74-012.webp"
+  },
+  {
+    "id": 13,
+    "label": "Bruine faible",
+    "file": "m74-013.webp"
+  },
+  {
+    "id": 14,
+    "label": "Bruine",
+    "file": "m74-014.webp"
+  },
+  {
+    "id": 15,
+    "label": "Bruine forte",
+    "file": "m74-015.webp"
+  },
+  {
+    "id": 16,
+    "label": "Pluie faible",
+    "file": "m74-016.webp"
+  },
+  {
+    "id": 17,
+    "label": "Pluie régulière",
+    "file": "m74-017.webp"
+  },
+  {
+    "id": 18,
+    "label": "Pluie forte",
+    "file": "m74-018.webp"
+  },
+  {
+    "id": 19,
+    "label": "Bruine intermittente",
+    "file": "m74-019.webp"
+  },
+  {
+    "id": 20,
+    "label": "Pluie intermittente",
+    "file": "m74-020.webp"
+  },
+  {
+    "id": 21,
+    "label": "Averses faibles · couvert",
+    "file": "m74-021.webp"
+  },
+  {
+    "id": 22,
+    "label": "Averses · couvert",
+    "file": "m74-022.webp"
+  },
+  {
+    "id": 23,
+    "label": "Fortes averses · couvert",
+    "file": "m74-023.webp"
+  },
+  {
+    "id": 24,
+    "label": "Pluie et vent",
+    "file": "m74-024.webp"
+  },
+  {
+    "id": 25,
+    "label": "Averses faibles · jour",
+    "file": "m74-025.webp"
+  },
+  {
+    "id": 26,
+    "label": "Averses · jour",
+    "file": "m74-026.webp"
+  },
+  {
+    "id": 27,
+    "label": "Fortes averses · jour",
+    "file": "m74-027.webp"
+  },
+  {
+    "id": 28,
+    "label": "Averses faibles · nuit",
+    "file": "m74-028.webp"
+  },
+  {
+    "id": 29,
+    "label": "Averses · nuit",
+    "file": "m74-029.webp"
+  },
+  {
+    "id": 30,
+    "label": "Fortes averses · nuit",
+    "file": "m74-030.webp"
+  },
+  {
+    "id": 31,
+    "label": "Faible neige · jour",
+    "file": "m74-031.webp"
+  },
+  {
+    "id": 32,
+    "label": "Averses de neige · jour",
+    "file": "m74-032.webp"
+  },
+  {
+    "id": 33,
+    "label": "Forte neige · jour",
+    "file": "m74-033.webp"
+  },
+  {
+    "id": 34,
+    "label": "Faible neige · nuit",
+    "file": "m74-034.webp"
+  },
+  {
+    "id": 35,
+    "label": "Averses de neige · nuit",
+    "file": "m74-035.webp"
+  },
+  {
+    "id": 36,
+    "label": "Forte neige · nuit",
+    "file": "m74-036.webp"
+  },
+  {
+    "id": 37,
+    "label": "Neige faible",
+    "file": "m74-037.webp"
+  },
+  {
+    "id": 38,
+    "label": "Neige régulière",
+    "file": "m74-038.webp"
+  },
+  {
+    "id": 39,
     "label": "Neige forte",
-    "file": "wx-snow-heavy.webp"
+    "file": "m74-039.webp"
   },
   {
-    "id": "42",
-    "label": "Neige forte",
-    "file": "wx-snow-heavy.webp"
+    "id": 40,
+    "label": "Neige intermittente",
+    "file": "m74-040.webp"
   },
   {
-    "id": "43",
-    "label": "Vent et neige",
-    "file": "collection-43.webp"
+    "id": 41,
+    "label": "Faibles averses de neige",
+    "file": "m74-041.webp"
   },
   {
-    "id": "44",
-    "label": "Peu nuageux",
-    "file": "wx-mostly-clear-day.webp"
+    "id": 42,
+    "label": "Averses de neige",
+    "file": "m74-042.webp"
   },
   {
-    "id": "45",
-    "label": "Averse nocturne",
-    "file": "wx-showers-heavy-night.webp"
+    "id": 43,
+    "label": "Fortes averses de neige",
+    "file": "m74-043.webp"
   },
   {
-    "id": "46",
-    "label": "Neige nocturne",
-    "file": "wx-snow-showers-heavy-night.webp"
+    "id": 44,
+    "label": "Pluie-neige faible",
+    "file": "m74-044.webp"
   },
   {
-    "id": "47",
-    "label": "Orage nocturne",
-    "file": "wx-thunder-night.webp"
+    "id": 45,
+    "label": "Pluie et neige",
+    "file": "m74-045.webp"
   },
   {
-    "id": "281",
-    "label": "Faible averse ensoleillée",
-    "file": "wx-showers-light-day.webp"
+    "id": 46,
+    "label": "Pluie-neige forte",
+    "file": "m74-046.webp"
   },
   {
-    "id": "322",
-    "label": "Averse de neige au soleil",
-    "file": "wx-snow-showers-day.webp"
+    "id": 47,
+    "label": "Neige et vent",
+    "file": "m74-047.webp"
   },
   {
-    "id": "324",
-    "label": "Passages nuageux",
-    "file": "collection-324.webp"
+    "id": 48,
+    "label": "Grains de neige",
+    "file": "m74-048.webp"
   },
   {
-    "id": "325",
-    "label": "Averse au soleil",
-    "file": "wx-showers-day.webp"
+    "id": 49,
+    "label": "Bruine verglaçante faible",
+    "file": "m74-049.webp"
   },
   {
-    "id": "326",
-    "label": "Pluie et neige au soleil",
-    "file": "collection-326.webp"
+    "id": 50,
+    "label": "Bruine verglaçante forte",
+    "file": "m74-050.webp"
   },
   {
-    "id": "329",
-    "label": "Orage neigeux au soleil",
-    "file": "collection-329.webp"
+    "id": 51,
+    "label": "Pluie verglaçante faible",
+    "file": "m74-051.webp"
   },
   {
-    "id": "3291",
-    "label": "Orage mixte au soleil",
-    "file": "collection-3291.webp"
+    "id": 52,
+    "label": "Pluie verglaçante",
+    "file": "m74-052.webp"
   },
   {
-    "id": "na",
-    "label": "Signature de la collection",
-    "file": "collection-na.webp"
+    "id": 53,
+    "label": "Pluie verglaçante forte",
+    "file": "m74-053.webp"
   },
   {
-    "id": "Sans titre",
-    "label": "Nuages sombres",
-    "file": "collection-nuages-sombres.webp"
+    "id": 54,
+    "label": "Grésil",
+    "file": "m74-054.webp"
+  },
+  {
+    "id": 55,
+    "label": "Neige roulée",
+    "file": "m74-055.webp"
+  },
+  {
+    "id": 56,
+    "label": "Grêle",
+    "file": "m74-056.webp"
+  },
+  {
+    "id": 57,
+    "label": "Forte grêle",
+    "file": "m74-057.webp"
+  },
+  {
+    "id": 58,
+    "label": "Gel",
+    "file": "m74-058.webp"
+  },
+  {
+    "id": 59,
+    "label": "Verglas",
+    "file": "m74-059.webp"
+  },
+  {
+    "id": 60,
+    "label": "Givre",
+    "file": "m74-060.webp"
+  },
+  {
+    "id": 61,
+    "label": "Orage sec",
+    "file": "m74-061.webp"
+  },
+  {
+    "id": 62,
+    "label": "Orage et pluie faible",
+    "file": "m74-062.webp"
+  },
+  {
+    "id": 63,
+    "label": "Orage et pluie",
+    "file": "m74-063.webp"
+  },
+  {
+    "id": 64,
+    "label": "Orage et forte pluie",
+    "file": "m74-064.webp"
+  },
+  {
+    "id": 65,
+    "label": "Orage et grêle",
+    "file": "m74-065.webp"
+  },
+  {
+    "id": 66,
+    "label": "Orage et forte grêle",
+    "file": "m74-066.webp"
+  },
+  {
+    "id": 67,
+    "label": "Orage et grésil",
+    "file": "m74-067.webp"
+  },
+  {
+    "id": 68,
+    "label": "Orage de neige",
+    "file": "m74-068.webp"
+  },
+  {
+    "id": 69,
+    "label": "Orage et éclaircies · jour",
+    "file": "m74-069.webp"
+  },
+  {
+    "id": 70,
+    "label": "Orage et éclaircies · nuit",
+    "file": "m74-070.webp"
+  },
+  {
+    "id": 71,
+    "label": "Orage et pluie-neige",
+    "file": "m74-071.webp"
+  },
+  {
+    "id": 72,
+    "label": "Orage et vent violent",
+    "file": "m74-072.webp"
+  },
+  {
+    "id": 73,
+    "label": "Brume",
+    "file": "m74-073.webp"
+  },
+  {
+    "id": 74,
+    "label": "Brouillard",
+    "file": "m74-074.webp"
+  },
+  {
+    "id": 75,
+    "label": "Brouillard dense",
+    "file": "m74-075.webp"
+  },
+  {
+    "id": 76,
+    "label": "Bancs de brouillard",
+    "file": "m74-076.webp"
+  },
+  {
+    "id": 77,
+    "label": "Brouillard givrant",
+    "file": "m74-077.webp"
+  },
+  {
+    "id": 78,
+    "label": "Brume et soleil",
+    "file": "m74-078.webp"
+  },
+  {
+    "id": 79,
+    "label": "Brume et lune",
+    "file": "m74-079.webp"
+  },
+  {
+    "id": 80,
+    "label": "Brouillard se dissipant",
+    "file": "m74-080.webp"
+  },
+  {
+    "id": 81,
+    "label": "Brume sèche",
+    "file": "m74-081.webp"
+  },
+  {
+    "id": 82,
+    "label": "Poussières en suspension",
+    "file": "m74-082.webp"
+  },
+  {
+    "id": 83,
+    "label": "Sable en suspension",
+    "file": "m74-083.webp"
+  },
+  {
+    "id": 84,
+    "label": "Fumée",
+    "file": "m74-084.webp"
+  },
+  {
+    "id": 85,
+    "label": "Vent modéré",
+    "file": "m74-085.webp"
+  },
+  {
+    "id": 86,
+    "label": "Vent fort",
+    "file": "m74-086.webp"
+  },
+  {
+    "id": 87,
+    "label": "Fortes rafales",
+    "file": "m74-087.webp"
+  },
+  {
+    "id": 88,
+    "label": "Tempête",
+    "file": "m74-088.webp"
+  },
+  {
+    "id": 89,
+    "label": "Soleil et vent",
+    "file": "m74-089.webp"
+  },
+  {
+    "id": 90,
+    "label": "Nuages et vent",
+    "file": "m74-090.webp"
+  },
+  {
+    "id": 91,
+    "label": "Nuit claire et vent",
+    "file": "m74-091.webp"
+  },
+  {
+    "id": 92,
+    "label": "Neige soufflée",
+    "file": "m74-092.webp"
+  },
+  {
+    "id": 93,
+    "label": "Blizzard",
+    "file": "m74-093.webp"
+  },
+  {
+    "id": 94,
+    "label": "Forte chaleur",
+    "file": "m74-094.webp"
+  },
+  {
+    "id": 95,
+    "label": "Froid intense",
+    "file": "m74-095.webp"
+  },
+  {
+    "id": 96,
+    "label": "Neige au sol",
+    "file": "m74-096.webp"
+  },
+  {
+    "id": 97,
+    "label": "Nuages bas fragmentés",
+    "file": "m74-097.webp"
+  },
+  {
+    "id": 98,
+    "label": "Nuages bas et éclaircies",
+    "file": "m74-098.webp"
+  },
+  {
+    "id": 99,
+    "label": "Nuages bas épars · nuit",
+    "file": "m74-099.webp"
+  },
+  {
+    "id": 100,
+    "label": "Nuages bas et bruine",
+    "file": "m74-100.webp"
+  },
+  {
+    "id": 101,
+    "label": "Nuages bas et pluie",
+    "file": "m74-101.webp"
+  },
+  {
+    "id": 102,
+    "label": "Neige faible et verglas",
+    "file": "m74-102.webp"
+  },
+  {
+    "id": 103,
+    "label": "Neige et verglas",
+    "file": "m74-103.webp"
+  },
+  {
+    "id": 104,
+    "label": "Neige forte et verglas",
+    "file": "m74-104.webp"
+  },
+  {
+    "id": 105,
+    "label": "Pluie-neige faible et verglas",
+    "file": "m74-105.webp"
+  },
+  {
+    "id": 106,
+    "label": "Pluie-neige et verglas",
+    "file": "m74-106.webp"
+  },
+  {
+    "id": 107,
+    "label": "Pluie-neige forte et verglas",
+    "file": "m74-107.webp"
+  },
+  {
+    "id": 108,
+    "label": "Nuages bas et neige faible",
+    "file": "m74-108.webp"
+  },
+  {
+    "id": 109,
+    "label": "Nuages bas et neige",
+    "file": "m74-109.webp"
+  },
+  {
+    "id": 110,
+    "label": "Nuages bas et neige forte",
+    "file": "m74-110.webp"
+  },
+  {
+    "id": 111,
+    "label": "Nuages bas et pluie-neige faible",
+    "file": "m74-111.webp"
+  },
+  {
+    "id": 112,
+    "label": "Nuages bas et pluie-neige",
+    "file": "m74-112.webp"
+  },
+  {
+    "id": 113,
+    "label": "Nuages bas et pluie-neige forte",
+    "file": "m74-113.webp"
   }
 ]

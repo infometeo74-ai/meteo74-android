@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.0 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.1 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.0.apk)
+[Télécharger Météo74 0.7.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.1.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -70,7 +70,7 @@ Les trois cartes utilisent la même échelle à neuf seuils en mm/h, avec le mê
 
 ## Météo locale
 
-L’accueil, les prévisions horaires et les dix prochains jours utilisent les pictogrammes embarqués de Météo74. Les 58 fichiers de la collection sont consultables dans **Paramètres → Collection de pictogrammes**. Les pictogrammes embarqués sont des images transparentes de 512 × 512 pixels. Le brouillard utilise une nappe diffuse contrastée. Les petites adaptations couvrent les conditions qui manquent dans le dossier original. Le logo de l’accueil est centré entre les bords de l’écran, avec les actions de synchronisation et de paramètres à droite. Les prévisions horaires disposent de variantes de jour et de nuit. Dans la liste des dix jours, la date et le pictogramme suffisent pour lire la prévision. Toucher un jour ouvre son détail. L’accueil présente température, ressenti, vent, rafales, humidité et pression. Les prévisions couvrent les 24 prochaines heures et les dix prochains jours. La recherche de communes privilégie la Haute-Savoie. Le GPS s’active à la demande. Les favoris et les dernières prévisions consultées sont conservés sur le téléphone. Les nouvelles mesures et le radar nécessitent une connexion.
+Les 113 pictogrammes illustrés de Météo74 sont embarqués dans l’application et consultables dans **Paramètres → Collection de pictogrammes**.
 
 ## Sources
 

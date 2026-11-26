@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 14,
-  "versionName": "0.7.0",
-  "file": "Meteo74-0.7.0.apk",
-  "size": 4718672,
-  "sha256": "7082e9fc08a77153681e1952623709beff858e2cf160d0019c4b92bf062e7f3d",
-  "notes": "Averses et éclaircies selon la couverture nuageuse. Carte de neige de 0 à 300 cm ajustée aux fonds de vallée, stations à flocons et bulletins résumés. Nouvel onglet de 22 webcams."
+  "versionCode": 15,
+  "versionName": "0.7.1",
+  "file": "Meteo74-0.7.1.apk",
+  "size": 5309918,
+  "sha256": "5f986f8da95ebd5f04d6a03ec8af2d40d605a2241e10187da5c18fcbddf6c3ae",
+  "notes": "113 nouveaux pictogrammes Météo74 sur l’accueil, les prévisions et les stations. Averses sous ciel couvert, manches à air et nuages bas."
 }
