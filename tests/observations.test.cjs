@@ -135,6 +135,14 @@ test('Ski bulletins use the named observation level, retain a dated zero, and ig
  assert.deepEqual(data.map(p=>[p.alt,p.values.snow,p.bulletinDay,p.time]),[[1600,0,'2026-11-26',null],[2500,250,'2026-11-26',null]]);
  assert.notEqual(data[0].lat,data[1].lat);
 });
+test('The shared Balme and Prarion snow reports count once each across ski cards',async()=>{
+ const {resortDepths}=await import(path.join(server,'normalize.mjs')),points=require(path.join(server,'ski-points.json'));
+ const balme={name:'Balme Tour · Vallorcine',altitude:2270,cm:125},prarion={name:'Les Houches',altitude:1900,cm:20};
+ const rows=[['vallorcine',[balme]],['chamonix-mont-blanc',[balme,prarion]],['les-houches',[prarion]]].map(([station_id,snow])=>({station_id,snow,day:'2026-11-26'}));
+ const first=resortDepths(rows,points,area),reverse=resortDepths(rows.reverse(),points,area);
+ assert.deepEqual(first.map(s=>s.id).sort(),reverse.map(s=>s.id).sort());
+ assert.deepEqual(first.map(s=>s.alt).sort(),[1900,2270]);
+});
 test('Snow depth observations correct the same terrain band without depositing summit snow in the valley',()=>{
  const k=F.indexAt(6.695,46.005),lat=F.rows[Math.floor(k/F.grid.width)],lon=F.cols[k%F.grid.width],dem=terrain.slice();
  dem[k]=32768+1600;dem[k+1]=32768+2500;

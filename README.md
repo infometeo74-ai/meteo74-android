@@ -26,6 +26,8 @@ Les observations récentes des stations de Météo-France diffusées par LiveSta
 
 **Relevé horaire** utilise les stations du dernier fichier départemental de Météo-France et les thermomètres Phénoclim à la même heure. **Par date** réunit les postes automatiques, les postes climatologiques manuels et le réseau nivo-météorologique. Le calendrier couvre l’année précédente et l’année en cours. Les couches distinguent minima, maxima, pluie sur 24 h, vent moyen, rafale maximale et relevés de neige. Certains postes transmettent en fin de mois. La carte des archives s’atténue lorsque les mesures sont trop éloignées. [Bilans Météo-France](https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes) · [Réseau nivo-météorologique](https://www.data.gouv.fr/datasets/archive-reseau-nivo-meteorologique)
 
+Le relevé de Balme apparaît dans les bulletins de Chamonix et de Vallorcine. Météo74 le compte une seule fois. Les points de la vallée correspondent aux altitudes de l’Index, de la Tête de Balme, de Bochard et du Prarion. [Bulletin des domaines de Chamonix](https://bulletinv3.lumiplan.pro/bulletin.php?lang=fr&station=chamonix) · [Plan de Brévent–Flégère](https://static.seetheworld.com/item_files/original/Plan_Hiver_BVT-FLG.pdf)
+
 [Carte des températures](artwork/carte-observations.png) · [Carte de la neige au sol](artwork/carte-neige-au-sol.png)
 
 ### Stations WeatherLink

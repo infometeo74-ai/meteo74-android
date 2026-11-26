@@ -266,7 +266,8 @@ export function resortDepths(rows,points,area){
             const name=pointName(reading.name),alt=number(reading.altitude),cm=number(reading.cm);
             const place=points[row.station_id]?.find(([label,expected])=>pointName(label)===name&&alt!==null&&Math.abs(expected-alt)<=25);
             if(!place||cm===null||cm<0||cm>1000)continue;
-            const [, ,lat,lon]=place,id='ski-'+row.station_id+'-'+name.replaceAll(' ','-');
+            // Some resorts share one instrument and repeat it in both bulletins.
+            const [, ,lat,lon,owner=row.station_id]=place,id='ski-'+owner+'-'+name.replaceAll(' ','-');
             if(!contains(lon,lat,area)||unique.has(id)&&unique.get(id).bulletinDay>=row.day)continue;
             unique.set(id,{id,name:reading.name,alt,lat,lon,time:null,bulletinDay:row.day,source:'Bulletin du domaine skiable',values:{snow:cm}});
         }

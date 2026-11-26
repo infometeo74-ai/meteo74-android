@@ -11,6 +11,15 @@
   "la-clusaz": [["Col Balme",2500,45.89664,6.50151],["La Clusaz",1040,45.9049,6.4238]],
   "le-grand-bornand": [["Chinaillon",1300,45.97352,6.45447],["Mont-Lachat",2100,45.95967,6.47635]],
   "manigod": [["Tête de Cabeau",1650,45.86744,6.40959],["Col de Merdassier",1500,45.86121,6.41691]],
-  "chamonix-mont-blanc": [["Brévent",2525,45.93351,6.83772],["Chamonix",1035,45.92333,6.86733]],
+  "chamonix-mont-blanc": [
+    ["Brévent",2525,45.93351,6.83772],
+    ["Flégère",2385,45.96848,6.87285],
+    ["Balme Tour · Vallorcine",2270,46.03054,6.96248],
+    ["Grands Montets",2765,45.94802,6.94506],
+    ["Les Houches",1900,45.88074,6.75030,"les-houches"],
+    ["Chamonix",1035,45.92333,6.86733]
+  ],
+  "vallorcine": [["Balme Tour · Vallorcine",2270,46.03054,6.96248,"chamonix-mont-blanc"]],
+  "les-houches": [["Les Houches",1900,45.88074,6.75030]],
   "combloux": [["Sommet du Torraz",1930,45.86169,6.53234]]
 }
