@@ -18,12 +18,12 @@ test('les 24 repères de la maquette ont exactement les coordonnées d’une loc
     assert.ok(towns.some(t=>t.name==='Les Rousses')&&towns.some(t=>t.name==='La Pesse'));
 });
 
-test('jeudi soir à Paris, deux jours fractionnés, puis échéances quotidiennes J4 à J14',()=>{
+test('jeudi soir à Paris, deux jours fractionnés, puis échéances quotidiennes J4 à J20',()=>{
     const p=F.periods(new Date('2026-11-26T19:00:00Z'));
     assert.deepEqual(p.slice(0,6).map(i=>i.label),['Ce soir','Cette nuit','Vendredi matin','Vendredi après-midi','Samedi matin','Samedi après-midi']);
-    assert.deepEqual(p.slice(6).map(i=>i.kind),Array(11).fill('day'));
-    assert.equal(p[6].label,'Dimanche');assert.equal(p.filter(k=>k.trend).length,4);
-    assert.equal(p.find(i=>i.trend).date,'2026-12-06');assert.equal(p.at(-1).date,'2026-12-09');
+    assert.deepEqual(p.slice(6).map(i=>i.kind),Array(17).fill('day'));
+    assert.equal(p[6].label,'Dimanche');assert.equal(p.filter(k=>k.trend).length,10);
+    assert.equal(p.find(i=>i.trend).date,'2026-12-06');assert.equal(p.at(-1).date,'2026-12-15');
     const url=new URL(F.url([{lat:46.485,lon:6.0605},{lat:46.285,lon:5.8478}]));
     assert.equal(url.searchParams.get('forecast_days'),'14');assert.equal(url.searchParams.get('latitude'),'46.485,46.285');
 });
@@ -34,7 +34,7 @@ test('les dates locales et les créneaux courants résistent à minuit et aux ch
         ['2026-10-25T01:20:00Z','2026-10-25','Fin de nuit'],['2026-12-31T22:30:00Z','2026-12-31','Cette nuit'],
         ['2026-12-31T23:05:00Z','2027-01-01','Fin de nuit']]) {
         const p=F.periods(new Date(when));assert.equal(p[0].date,date);assert.equal(p[0].label,first);
-        assert.equal(new Set(p.map(v=>v.date)).size,14);
+        assert.equal(new Set(p.map(v=>v.date)).size,20);
     }
 });
 
@@ -47,7 +47,7 @@ test('une nuit couvre ses deux dates civiles et les pictos changent selon la pé
     const v=F.summarize(sample()),night=v['2026-11-26/night'];
     assert.equal(night.icon,'m74-007');assert.deepEqual([night.low,night.high],[-4,2]);
     assert.equal(v['2026-11-27/morning'].icon,'m74-021');assert.match(v['2026-11-27/afternoon'].label,/Orage/);
-    assert.equal(v['2026-12-09/day'],undefined);
+    assert.deepEqual([v['2026-12-09/day'].icon,v['2026-12-09/day'].low,v['2026-12-09/day'].high],[null,0,2]);
 });
 test('une réponse groupée associe les mailles par indice, y compris en cas de données manquantes',()=>{
     const a=sample(),b=sample();b.daily.weather_code[0]=0;b.hourly.cloud_cover.fill(0);
@@ -104,4 +104,58 @@ test('la carte et la fiche utilisent la même couche basse en journée, même à
     const local=C.dailyClouds({hourly:{...hourly,time:time.map(unix)},daily:{...daily,time:dates.map(t=>unix(t+'T00:00'))}},13);
     assert.deepEqual([summary.cloud,summary.lowCloud],[local.total,local.low]);
     assert.equal(summary.label,'Nuages bas');
+});
+
+test('J15 à J20 utilise des dates civiles et les médianes des membres EC46 disponibles',()=>{
+    const dates=F.periods(new Date('2026-12-20T12:00:00Z')).filter(p=>p.extended);
+    const u=new URL(F.ensembleUrl([{lat:46,lon:6}],'2026-12-20'));
+    assert.equal(u.searchParams.get('start_date'),dates[0].date);assert.equal(u.searchParams.get('end_date'),dates.at(-1).date);
+    assert.deepEqual(dates.map(p=>p.dayNumber),[15,16,17,18,19,20]);
+    const daily={time:[dates.at(-1).date]};
+    for(let n=0;n<51;n++){
+        const suffix=n?'_member'+String(n).padStart(2,'0'):'';
+        for(const [field,value] of Object.entries({temperature_2m_min:n/2-13,temperature_2m_max:n/2-5,precipitation_sum:n<40?2:0,snowfall_sum:0,cloud_cover_mean:89})){
+            daily[field+suffix]=[value];
+        }
+    }
+    const key=dates.at(-1).key,r=F.ensembleSummary({daily})[key];
+    assert.deepEqual([r.low,r.high,r.wet,r.members,r.label],[-.5,7.5,78,51,'Tendance humide']);
+    assert.ok(r.lowBand[0]<r.low&&r.highBand[1]>r.high);assert.equal(r.lowCloud,null);
+    const none={time:daily.time,temperature_2m_min:[2],temperature_2m_max:[3]};
+    assert.equal(F.ensembleSummary({daily:none}),null);
+});
+
+test('le désaccord des modèles et les nuages élevés ne deviennent pas du stratus',()=>{
+    const M=require(path.join(base,'forecast-clouds.js')),C=require(path.join(base,'core.js'));
+    const time=[18,19,20,21].map(h=>'2026-11-26T'+h+':00');
+    function check(votes,baseLow=90,mid=15){
+        const h={time,weather_code:time.map(()=>3),cloud_cover:time.map(()=>95),cloud_cover_low:time.map(()=>baseLow),cloud_cover_mid:time.map(()=>mid),
+            cloud_cover_high:time.map(()=>35),is_day:time.map(()=>0)};
+        const m={time};
+        ['meteofrance_arome_france','icon_seamless','gfs_seamless'].forEach((model,i)=>{
+            for(const [key,v] of Object.entries({cloud_cover:95,cloud_cover_low:votes[i],cloud_cover_mid:15,cloud_cover_high:30,relative_humidity_2m:94})){
+                m[key+'_'+model]=time.map(()=>votes[i]===null?null:v);
+            }
+        });
+        return F.summarize(M.check({hourly:h,daily:{time:['2026-11-26'],weather_code:[3]}},{hourly:m}))['2026-11-26/evening'];
+    }
+    assert.equal(check([92,12,10]).label,'Ciel couvert');
+    assert.equal(check([92,null,11]).label,'Ciel couvert');
+    assert.equal(check([91,88,85],45,95).label,'Ciel couvert');
+    const low=check([94,89,8]);assert.equal(low.label,'Nuages bas');assert.equal(low.stratus,true);assert.equal(low.modelMask,7);
+    assert.equal(check([92,null,null]).stratus,false);
+    assert.equal(C.condition(45,false,100,0,{lowAllowed:true,cloud_cover_low:97}).label,'Brouillard');
+    assert.deepEqual([C.condition(2,false,75,0,{lowAllowed:false}).label,C.weatherSymbol(2,false,75,0,{lowAllowed:false})],['Nuageux','m74-011']);
+});
+
+test('le fond thermique conserve les valeurs nulles, le zéro et l’échelle commune',()=>{
+    const T=require(path.join(base,'forecast-temperature.js'));
+    const points=read('forecast/towns.json').concat(read('forecast/thermal-points.json'));
+    const bytes=fs.readFileSync(path.join(base,'assets/forecast/altitudes.bin'));
+    const plan=T.prepare(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),points);
+    assert.equal(T.surface(plan,points.map(()=>null),false),null);
+    const constant=T.surface(plan,points.map(()=>0),false);
+    assert.ok(constant.alpha.some(a=>a>150));assert.ok(constant.field.every(v=>v===0||Number.isNaN(v)));
+    const positive=T.surface(plan,points.map(()=>8),true);
+    assert.ok(positive.field.some(v=>v===8));
 });

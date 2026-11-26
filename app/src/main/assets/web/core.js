@@ -31,8 +31,8 @@ function lowCoverage(total,low){
 function hasLowCloudLayer(cloud,low){
  if(!percentage(low)||low<20)return false;
  if(!percentage(cloud))return low>=75;
- if(cloud>=85)return low>=40;
- return low>=35||low>=cloud/2;
+ if(cloud>=85)return low>=55&&low>=cloud*.62;
+ return low>=35&&low>=cloud*.5;
 }
 function lowCloudSky(code,cloud,low,day,sunnyBreaks){
  if(!hasLowCloudLayer(cloud,low)||(!percentage(cloud)&&code!==3))return null;
@@ -41,8 +41,8 @@ function lowCloudSky(code,cloud,low,day,sunnyBreaks){
  return [12,'Nuages bas'];
 }
 function detailedWeather(code,day,cloud,precip,details={}){
- const lowFraction=lowCoverage(cloud,details.cloud_cover_low);
- const low=finite(details.cloud_cover_low)&&details.cloud_cover_low>=85;
+ const lowFraction=details.lowAllowed===false?null:lowCoverage(cloud,details.cloud_cover_low);
+ const low=finite(lowFraction)&&lowFraction>=85;
  const windy=finite(details.wind_speed_10m)&&details.wind_speed_10m>=40;
  const mixed=details.snowfall>0&&(details.rain>0||details.showers>0);
  if(mixed&&[51,53,55,61,63,65,71,73,75,80,81,82,85,86,95,97].includes(code)){
@@ -67,6 +67,7 @@ function detailedWeather(code,day,cloud,precip,details={}){
   const sun=details.sunnyBreaks??(finite(direct)&&percentage(cloud)?direct>120&&cloud<85:null);
   const sky=lowCloudSky(code,cloud,lowFraction,day,sun);
   if(sky)return sky;
+  if(finite(cloud)&&cloud>=65&&cloud<85&&sun!==true)return [day?5:11,'Nuageux'];
  }
  if(windy){
   if(code===0&&cloudState(code,cloud,precip)!=='covered')return [day?89:91,day?'Soleil et vent':'Nuit claire et vent'];
@@ -115,13 +116,13 @@ function forecastURL(p){
  if(!validPlace(p))throw Error('Coordonnées incorrectes');
  const q=new URLSearchParams({latitude:p.latitude,longitude:p.longitude,timezone:'auto',timeformat:'unixtime',forecast_days:10,temperature_unit:'celsius',wind_speed_unit:'kmh',precipitation_unit:'mm',
  current:'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,cloud_cover_low,direct_normal_irradiance,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
- hourly:'temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,cloud_cover,cloud_cover_low,sunshine_duration,visibility,wind_speed_10m,wind_gusts_10m,is_day',
+ hourly:'temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,sunshine_duration,visibility,wind_speed_10m,wind_gusts_10m,is_day',
  daily:'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max'});
  return 'https://api.open-meteo.com/v1/forecast?'+q;
 }
 function date(epoch,zone,opts){if(!finite(epoch))return '—';try{return new Intl.DateTimeFormat('fr-FR',{timeZone:zone||'Europe/Paris',...opts}).format(new Date(epoch*1000));}catch{return '—';}}
 const clock=(t,z)=>date(t,z,{hour:'2-digit',minute:'2-digit'});
-function hours(data,now=Date.now()/1000){const h=data?.hourly;if(!Array.isArray(h?.time))return [];const floor=Math.floor(now/3600)*3600;return h.time.map((time,i)=>({time,i,temperature:h.temperature_2m?.[i],probability:h.precipitation_probability?.[i],code:h.weather_code?.[i],cloud:h.cloud_cover?.[i],precip:h.precipitation?.[i],details:{cloud_cover_low:h.cloud_cover_low?.[i],sunnyBreaks:percentage(h.cloud_cover?.[i])&&h.cloud_cover[i]<85&&hourSunshine(h,i)>=600,wind_speed_10m:h.wind_speed_10m?.[i],wind_gusts_10m:h.wind_gusts_10m?.[i],rain:h.rain?.[i],showers:h.showers?.[i],snowfall:h.snowfall?.[i]},isDay:h.is_day?.[i]!==0})).filter(x=>x.time>=floor&&x.time<floor+24*3600);}
+function hours(data,now=Date.now()/1000){const h=data?.hourly;if(!Array.isArray(h?.time))return [];const floor=Math.floor(now/3600)*3600;return h.time.map((time,i)=>({time,i,temperature:h.temperature_2m?.[i],probability:h.precipitation_probability?.[i],code:h.weather_code?.[i],cloud:h.cloud_cover?.[i],precip:h.precipitation?.[i],details:{cloud_cover_low:h.cloud_cover_low?.[i],lowAllowed:h.lowAllowed?.[i],sunnyBreaks:percentage(h.cloud_cover?.[i])&&h.cloud_cover[i]<85&&hourSunshine(h,i)>=600,wind_speed_10m:h.wind_speed_10m?.[i],wind_gusts_10m:h.wind_gusts_10m?.[i],rain:h.rain?.[i],showers:h.showers?.[i],snowfall:h.snowfall?.[i]},isDay:h.is_day?.[i]!==0})).filter(x=>x.time>=floor&&x.time<floor+24*3600);}
 // Sunshine is a total for the preceding hour. Use the value ending the displayed hour.
 function hourSunshine(hourly,i){
  const seconds=hourly.sunshine_duration?.[i+1];
@@ -130,7 +131,19 @@ function hourSunshine(hourly,i){
 function periodClouds(hourly,indices){
  let totalSum=0,lowSum=0,totalCount=0,lowCount=0;
  let lightHours=0,sunHours=0,breakSeconds=0;
+ let assessed=0,supported=0,run=0,longest=0,stratusHours=0,previous=-2;
+ const compared=[0,0,0],modelSum=[0,0,0],modelCount=[0,0,0];
  for(const i of indices){
+  const allowed=hourly.lowAllowed?.[i];
+  if(typeof allowed==='boolean'){assessed++;if(allowed)supported++;}
+  const mask=hourly.lowModelMask?.[i]||0;
+  for(let k=0;k<3;k++){
+   if(mask&(1<<k))compared[k]++;
+   const cover=hourly.lowByModel?.[k]?.[i];
+   if(percentage(cover)){modelSum[k]+=cover;modelCount[k]++;}
+  }
+  if(hourly.stratusSignal?.[i]){run=i===previous+1?run+1:1;longest=Math.max(longest,run);stratusHours++;}else run=0;
+  previous=i;
   const total=hourly.cloud_cover?.[i];
   if(percentage(total)){totalSum+=total;totalCount++;}
   const low=lowCoverage(total,hourly.cloud_cover_low?.[i]);
@@ -148,7 +161,11 @@ function periodClouds(hourly,indices){
  const required=Math.max(1,Math.ceil(2*indices.length/3));
  const sunnyBreaks=lightHours>0&&sunHours>=Math.ceil(2*lightHours/3)
   ?breakSeconds>=Math.max(600,lightHours*300):null;
- return {total:totalCount>=required?totalSum/totalCount:null,low:lowCount>=required?lowSum/lowCount:null,sunnyBreaks};
+ const modelMask=compared.reduce((mask,n,k)=>n>=required?mask|(1<<k):mask,0);
+ return {total:totalCount>=required?totalSum/totalCount:null,low:lowCount>=required?lowSum/lowCount:null,sunnyBreaks,
+  lowAllowed:assessed>=required?supported>assessed/2:null,modelMask,
+  modelLow:modelCount.map((n,k)=>n>=required?Math.round(modelSum[k]/n):null),
+  stratus:longest>=3&&stratusHours>=required};
 }
 function daytimeClouds(hourly,indices){
  const daylight=indices.filter(i=>hourly.is_day?.[i]===1);

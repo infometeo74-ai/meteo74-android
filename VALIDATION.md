@@ -1,3 +1,11 @@
+# Météo74 0.7.8
+
+26 novembre 2026. APK Android `fr.meteo74.android`, version 22. La signature correspond à la 0.7.7. Les ressources du paquet, son intégrité ZIP, son alignement et les 69 tests ont été vérifiés. Android Lint rapporte six avertissements et zéro erreur.
+
+Les vues des températures ont été contrôlées aux largeurs de 320, 393 et 740 pixels CSS avec les réponses des services de prévision. Les 24 repères et les dix noms sont visibles dans la vue d’ensemble contrôlée, sans chevauchement des chiffres ni des noms. Les fonds des minimales et des maximales diffèrent. Le passage en temps sensible affiche les 24 pictogrammes. Le sélecteur et le cache hors connexion ont été vérifiés jusqu’à J20.
+
+Pour Annecy, la fiche de la nuit du 26 au 27 novembre indique une couverture à l’étage bas de 50 % pour AROME, 89 % pour ICON et 100 % pour GFS. Le test de désaccord vérifie qu’un ciel couvert avec des nuages surtout élevés conserve un libellé général. Pour le mardi 15 décembre (J20 du test), les 51 scénarios de la maille EC46 d’Annecy donnaient des médianes arrondies de −2 °C et 4 °C. Ces valeurs datent des données utilisées pour le contrôle.
+
 # Météo74 0.7.7
 
 26 novembre 2026. APK Android `fr.meteo74.android`, version 21, signé avec le certificat de la 0.7.6. Taille de 9 446 070 octets, SHA-256 `389bf5addac05e45af29e43673b061b2c3311feb44daa4a1d7a142330dd04a35`. Les ressources embarquées, l’alignement ZIP et les 66 tests sont validés. Android Lint retourne six avertissements et zéro erreur.

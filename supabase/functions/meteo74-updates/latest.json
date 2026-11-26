@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 21,
-  "versionName": "0.7.7",
-  "file": "Meteo74-0.7.7.apk",
-  "size": 9446070,
-  "sha256": "389bf5addac05e45af29e43673b061b2c3311feb44daa4a1d7a142330dd04a35",
-  "notes": "Icônes météo agrandies sur la carte de prévisions et dans la liste des dix prochains jours."
+  "versionCode": 22,
+  "versionName": "0.7.8",
+  "file": "Meteo74-0.7.8.apk",
+  "size": 9508319,
+  "sha256": "9f7dced218af5e2286b5a7403f2a67e08c391ff50e1f97031067b040e633acf3",
+  "notes": "Carte des températures minimales et maximales, tendances jusqu’à J20 et comparaison des couches nuageuses avec AROME, ICON et GFS."
 }

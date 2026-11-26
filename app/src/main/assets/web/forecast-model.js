@@ -22,7 +22,7 @@
     function periods(now = new Date()) {
         const {date,hour} = localNow(now);
         const list = [];
-        for (let i=0; i<14; i++) {
+        for (let i=0; i<20; i++) {
             const day = plus(date,i), instant = new Date(day+'T12:00:00Z');
             const lower = weekday.format(instant), name = lower[0].toUpperCase()+lower.slice(1);
             const kinds = i===0 ? Object.keys(slots).filter(k => slots[k][1]>hour) :
@@ -30,12 +30,12 @@
             for (const kind of kinds) {
                 const label = i===0 ? firstLabels[kind] : kind==='day' ? name :
                     name+(kind==='morning'?' matin':' après-midi');
-                list.push({key:day+'/'+kind,date:day,kind,label,dateLabel:dateLabel.format(instant),trend:i>=10});
+                list.push({key:day+'/'+kind,date:day,kind,label,dateLabel:dateLabel.format(instant),dayNumber:i+1,trend:i>=10,extended:i>=14});
             }
         }
         return list;
     }
-    const hourlyFields = ['weather_code','temperature_2m','cloud_cover','cloud_cover_low','is_day','sunshine_duration','precipitation','rain','showers','snowfall'];
+    const hourlyFields = ['weather_code','temperature_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','is_day','sunshine_duration','precipitation','rain','showers','snowfall'];
     function url(towns) {
         const params = new URLSearchParams({
             latitude:towns.map(t => t.lat).join(','), longitude:towns.map(t => t.lon).join(','),
@@ -47,9 +47,11 @@
     }
     function summary(code,day,cloud,precip,low,high,details) {
         const icon=C.weatherSymbol(code,day,cloud,precip,details);
-        return icon ? {icon,label:C.condition(code,day,cloud,precip,details).label,low,high,
+        if(!icon && !C.finite(low) && !C.finite(high)) return null;
+        return {icon,label:icon?C.condition(code,day,cloud,precip,details).label:'',low,high,
             cloud:details?.lowSky&&C.finite(cloud)?Math.round(cloud):null,
-            lowCloud:details?.lowSky&&C.finite(details.cloud_cover_low)?Math.round(details.cloud_cover_low):null} : null;
+            modelMask:details?.modelMask||0,modelLow:details?.modelMask?details.modelLow:null,stratus:!!(details?.lowSky&&details?.stratus),
+            lowCloud:details?.lowSky&&C.finite(details.cloud_cover_low)?Math.round(details.cloud_cover_low):null};
     }
     function family(code) {
         if (code<=3) return code;
@@ -64,8 +66,10 @@
         return 45;
     }
     function hourSummary(h,indices,kind) {
+        const temperatures=indices.map(i=>h.temperature_2m?.[i]).filter(C.finite);
+        const low=temperatures.length?Math.min(...temperatures):null, high=temperatures.length?Math.max(...temperatures):null;
         const valid=indices.filter(i => C.finite(h.weather_code[i]));
-        if (!valid.length) return null;
+        if (!valid.length) return summary(null,false,null,null,low,high);
         const counts=new Map();
         for (const i of valid) {
             const group=family(h.weather_code[i]);
@@ -75,21 +79,21 @@
         const group=counts.has(95) ? 95 : [...counts].sort((a,b)=>b[1]-a[1] || b[0]-a[0])[0][0];
         const match=valid.filter(i=>family(h.weather_code[i])===group);
         const representative=match.slice().sort((a,b)=>h.weather_code[a]-h.weather_code[b])[Math.floor(match.length/2)];
-        const temperatures=indices.map(i=>h.temperature_2m?.[i]).filter(C.finite);
         const daylight=valid.filter(i=>h.is_day?.[i]===1).length;
         const day=kind!=='night' && kind!=='dawn' && daylight*2>=valid.length;
         const code=h.weather_code[representative],dry=code>=0&&code<=3;
         const clouds=C.periodClouds(h,indices);
-        const lowSky=dry&&C.hasLowCloudLayer(clouds.total,clouds.low);
+        const lowSky=dry&&clouds.lowAllowed!==false&&C.hasLowCloudLayer(clouds.total,clouds.low);
         const cover=lowSky?clouds.total:h.cloud_cover?.[representative];
-        const details={cloud_cover_low:dry?(lowSky?clouds.low:null):h.cloud_cover_low?.[representative],sunnyBreaks:clouds.sunnyBreaks,lowSky};
+        const details={cloud_cover_low:dry?(lowSky?clouds.low:null):h.cloud_cover_low?.[representative],sunnyBreaks:clouds.sunnyBreaks,lowAllowed:clouds.lowAllowed,modelMask:clouds.modelMask,modelLow:clouds.modelLow,stratus:clouds.stratus,lowSky};
         for (const key of ['rain','showers','snowfall']) details[key]=h[key]?.[representative];
-        return summary(code,day,cover,h.precipitation?.[representative],
-            temperatures.length?Math.min(...temperatures):null,temperatures.length?Math.max(...temperatures):null,details);
+        return summary(code,day,cover,h.precipitation?.[representative],low,high,details);
     }
     function summarize(data) {
-        const h=data?.hourly, d=data?.daily;
-        if (!Array.isArray(d?.time)||!Array.isArray(d.weather_code)||!Array.isArray(h?.time)||!Array.isArray(h.weather_code)) return null;
+        const d=data?.daily;
+        if (!Array.isArray(d?.time)) return null;
+        const h={time:[],weather_code:[],...data.hourly};
+        if (!Array.isArray(h.time)||!Array.isArray(h.weather_code)) return null;
         const values={};
         const byDate=new Map(),hours=new Map();
         for (let i=0; i<h.time.length; i++) {
@@ -107,10 +111,10 @@
         }
         d.time.forEach((date,i)=>{
             const clouds=C.daytimeClouds(h,byDate.get(date)||[]);
-            const code=d.weather_code[i],lowSky=[0,1,2,3].includes(code)&&C.hasLowCloudLayer(clouds.total,clouds.low);
+            const code=d.weather_code?.[i],lowSky=[0,1,2,3].includes(code)&&clouds.lowAllowed!==false&&C.hasLowCloudLayer(clouds.total,clouds.low);
             const total=(lowSky?clouds.total:null)??d.cloud_cover_mean?.[i];
             const item=summary(code,true,total,d.precipitation_sum?.[i],d.temperature_2m_min?.[i],d.temperature_2m_max?.[i],
-                {cloud_cover_low:lowSky?clouds.low:null,sunnyBreaks:clouds.sunnyBreaks,lowSky});
+                {cloud_cover_low:lowSky?clouds.low:null,sunnyBreaks:clouds.sunnyBreaks,lowAllowed:clouds.lowAllowed,modelMask:clouds.modelMask,modelLow:clouds.modelLow,stratus:clouds.stratus,lowSky});
             if(item)values[date+'/day']=item;
         });
         for (const [key,indices] of hours) {
@@ -119,19 +123,67 @@
         }
         return Object.keys(values).length ? values : null;
     }
+    function ensembleUrl(towns,today) {
+        const params=new URLSearchParams({
+            latitude:towns.map(t=>t.lat).join(','),longitude:towns.map(t=>t.lon).join(','),
+            timezone:'Europe/Paris',models:'ecmwf_ec46',start_date:plus(today,14),end_date:plus(today,19),
+            daily:'temperature_2m_min,temperature_2m_max,precipitation_sum,snowfall_sum,cloud_cover_mean'
+        });
+        return 'https://seasonal-api.open-meteo.com/v1/seasonal?'+params;
+    }
+    function quantile(sorted,p) {
+        const index=(sorted.length-1)*p, lo=Math.floor(index), fraction=index-lo;
+        return sorted[lo]*(1-fraction)+sorted[Math.ceil(index)]*fraction;
+    }
+    function ensembleSummary(data) {
+        const d=data?.daily;
+        if(!Array.isArray(d?.time))return null;
+        const result={};
+        d.time.forEach((date,i)=>{
+            const lows=[], highs=[], cloud=[], rain=[], snow=[];
+            for(let member=0;member<51;member++){
+                const suffix=member?'_member'+String(member).padStart(2,'0'):'';
+                const low=d['temperature_2m_min'+suffix]?.[i],high=d['temperature_2m_max'+suffix]?.[i];
+                if(C.finite(low)&&C.finite(high)&&low<=high){lows.push(low);highs.push(high);}
+                for(const [field,list] of [['cloud_cover_mean',cloud],['precipitation_sum',rain],['snowfall_sum',snow]]){
+                    const value=d[field+suffix]?.[i];
+                    if(C.finite(value)&&value>=0)list.push(value);
+                }
+            }
+            const minimum=26;
+            const pct=(values,threshold)=>values.length>=minimum?Math.round(100*values.filter(v=>v>=threshold).length/values.length):null;
+            const wet=pct(rain,1), snowy=pct(snow,1);
+            cloud.sort((a,b)=>a-b);
+            const cover=cloud.length>=minimum?quantile(cloud,.5):null;
+            let code=null,label='';
+            if(snowy!==null&&snowy>=65){code=71;label='Tendance neigeuse';}
+            else if(wet!==null&&wet>=65){code=61;label='Tendance humide';}
+            else if(cover!==null){
+                code=cover<25?0:cover<60?2:3;
+                label=code===0?'Tendance ensoleillée':code===2?'Tendance variable':'Tendance nuageuse';
+                if(wet!==null&&wet>=35)label+=' · précipitations possibles';
+            }
+            lows.sort((a,b)=>a-b);highs.sort((a,b)=>a-b);
+            const enough=lows.length>=minimum;
+            const value=summary(code,true,cover,null,enough?quantile(lows,.5):null,enough?quantile(highs,.5):null);
+            if(value)result[date+'/day']={...value,label,wet,members:lows.length,
+                lowBand:enough?[quantile(lows,.25),quantile(lows,.75)]:null,highBand:enough?[quantile(highs,.25),quantile(highs,.75)]:null};
+        });
+        return Object.keys(result).length?result:null;
+    }
     // Open-Meteo returns the model cell coordinates, which may differ from the requested town.
     // Its location_id is the request index. Some deployments omit it for the first location.
-    function batch(response,towns) {
+    function batch(response,towns,parse=summarize) {
         const items=Array.isArray(response)?response:[response];
         const records=new Map();
         for (const [index,item] of items.entries()) {
             const id=item?.location_id ?? index;
             if(!Number.isInteger(id)||id<0||id>=towns.length||records.has(id)) continue;
-            const values=summarize(item);
+            const values=parse(item);
             if(values) records.set(id,values);
         }
         return records;
     }
-    const api={localNow,periods,url,summarize,batch};
+    const api={localNow,periods,url,summarize,ensembleUrl,ensembleSummary,batch};
     if(typeof module==='object'&&module.exports) module.exports=api; else root.MeteoForecastModel=api;
 })(globalThis);

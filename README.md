@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.7 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.8 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.7 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.7.apk)
+[Télécharger Météo74 0.7.8 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.8.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -12,9 +12,11 @@ Pour une première installation sur Android 7 ou plus récent, ouvre le lien dep
 
 ## Carte des prévisions
 
-Dans **Prévisions**, 24 localités de Haute-Savoie et des régions voisines constituent la vue d’ensemble. Dix repères portent un nom. En zoomant, les communes voisines apparaissent et chaque pictogramme ouvre sa prévision. Le bandeau sous la carte propose les moments de la journée à courte échéance, puis une carte par jour jusqu’au dixième jour et les tendances du onzième au quatorzième. Les échéances utilisent l’heure de Paris et les données locales d’[Open-Meteo](https://open-meteo.com/en/docs).
+Dans **Prévisions**, la vue **Températures** affiche les minimales en bleu et les maximales en rouge pour l’échéance choisie. Les boutons **Minimales** et **Maximales** choisissent la grandeur représentée par le fond. La palette est celle des observations. Les 24 repères de la vue générale correspondent à des localités. Le champ de température utilise également 17 points de prévision sur le relief et en bordure de la carte. **Temps sensible** affiche les pictogrammes. Les noms des villes principales apparaissent en majuscules, ceux des villes moyennes en gras et les autres en caractères ordinaires.
 
-Les icônes de la carte de prévisions sont environ 30 % plus grandes que dans la 0.7.6. Dans la liste des dix prochains jours, elles occupent 56 pixels CSS. Pour les situations de nuages bas, la carte compare la couverture de l’étage bas, la couverture totale et la durée d’ensoleillement prévue sur le créneau. Elle indique « Nuages bas » sous une couche grise et « Nuages bas et éclaircies » lorsque des ouvertures diurnes laissent passer le soleil. En touchant la localité, on peut consulter les deux pourcentages de couverture.
+Les créneaux des trois premiers jours utilisent les extrêmes horaires du créneau, puis la carte affiche les extrêmes quotidiens. Les modèles AROME, ICON et GFS disponibles permettent de comparer les étages nuageux sur les cinq premiers jours. La fiche d’une localité détaille les couvertures basses par modèle. La mention « stratus possible » demande une couche basse persistante et humide, corroborée par plusieurs modèles. Les précipitations et le brouillard conservent leurs libellés spécifiques.
+
+Le sélecteur propose les prévisions jusqu’à J10 et les tendances de J11 à J20 (J1 est aujourd’hui, à l’heure de Paris). À partir de J15, les températures représentent la médiane des scénarios de la maille régionale ECMWF EC46. La fiche donne l’intervalle interquartile et la part des scénarios atteignant 1 mm dans la journée. Les prévisions à courte échéance et les tendances se conservent séparément pour la consultation hors connexion. [Open-Meteo](https://open-meteo.com/en/docs) · [ECMWF EC46 via Open-Meteo](https://open-meteo.com/en/docs/seasonal-forecast-api)
 
 ## Accueil et favoris
 

@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.7.7 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.7.8 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -172,11 +172,15 @@ async function fetchJSON(url,signal,timeout=30000,headers){const ctl=new AbortCo
 function ensureWeather(p,force=false) {
     const key=C.placeKey(p),old=cached(p);
     if(busy.has(key))return busy.get(key);
-    if(!force&&old&&Date.now()-old.fetchedAt<TTL)return Promise.resolve(old);
+    if(!force&&old&&old.data.cloudReview===1&&Date.now()-old.fetchedAt<TTL)return Promise.resolve(old);
     const task=(async()=>{
         try{
             if(!navigator.onLine)throw Error('Sans réseau');
-            const data=await fetchJSON(C.forecastURL(p));
+            const point={lat:p.latitude,lon:p.longitude};
+            const regional=point.lat>44.5&&point.lat<47.8&&point.lon>4&&point.lon<9;
+            const [data,checks]=await Promise.all([fetchJSON(C.forecastURL(p)),
+                regional?ForecastClouds.compare([point],fetchJSON,undefined,true):Promise.resolve(new Map())]);
+            ForecastClouds.check(data,checks.get(point.lat+','+point.lon));data.cloudReview=1;
             if(!C.validForecast(data))throw Error('Réponse météo incomplète.');
             const fetchedAt=saveWeather(p,data);errors.delete(key);
             return {data,fetchedAt};
@@ -249,8 +253,8 @@ function drawChart(hours,tz){const s=C.scale(hours.map(h=>h.temperature));if(!s)
 }
 function renderDaily(d,di){const a=d.daily,tz=d.timezone,sc=C.scale([...a.temperature_2m_min,...a.temperature_2m_max]);$('daily-list').innerHTML=a.time.map((t,i)=>{if(di>=0&&i<di)return '';const lo=a.temperature_2m_min[i],hi=a.temperature_2m_max[i];
  const clouds=C.dailyClouds(d,i),code=a.weather_code[i];
- const lowSky=[0,1,2,3].includes(code)&&C.hasLowCloudLayer(clouds.total,clouds.low);
- const total=lowSky?clouds.total:C.dailyCloud(d,i),sky=lowSky?{cloud_cover_low:clouds.low,sunnyBreaks:clouds.sunnyBreaks}:undefined;
+ const lowSky=[0,1,2,3].includes(code)&&clouds.lowAllowed!==false&&C.hasLowCloudLayer(clouds.total,clouds.low);
+ const total=lowSky?clouds.total:C.dailyCloud(d,i),sky={cloud_cover_low:lowSky?clouds.low:null,lowAllowed:clouds.lowAllowed,sunnyBreaks:clouds.sunnyBreaks};
  const co=C.condition(code,true,total,undefined,sky);
  const left=sc&&C.finite(lo)?Math.max(0,100*sc.ratio(lo)):0,range=sc&&C.finite(lo)&&C.finite(hi)?Math.max(3,100*(hi-lo)/(sc.high-sc.low)):0;
  return '<details class="daily-row"><summary aria-label="'+escape(C.date(t,tz,{weekday:'long',day:'numeric',month:'long'})+', '+co.label+', '+C.fmt(lo)+' à '+C.fmt(hi)+' degrés')+'"><span class="daily-date"><b>'+(i===di?'Aujourd’hui':i===di+1&&di>=0?'Demain':C.date(t,tz,{weekday:'long'}))+'</b><small>'+C.date(t,tz,{day:'numeric',month:'short'})+'</small></span>'+weather(code,true,total,undefined,sky)+'<span class="rain-prob">'+C.fmt(a.precipitation_probability_max[i])+' %</span><span class="daily-range"><span>'+C.fmt(lo)+'°</span><span class="range-track"><span class="range-fill" style="left:'+left+'%;width:'+range+'%"></span></span><span>'+C.fmt(hi)+'°</span></span></summary><div class="daily-extra"><strong>'+co.label+'</strong><div class="daily-extra-grid"><span>Pluie / neige : '+C.fmt(a.precipitation_sum[i],1)+' mm</span><span>UV maximum : '+C.fmt(a.uv_index_max[i],1)+'</span><span>Vent max. : '+C.fmt(a.wind_speed_10m_max[i])+' km/h</span><span>Rafales : '+C.fmt(a.wind_gusts_10m_max[i])+' km/h</span><span>Lever : '+C.clock(a.sunrise[i],tz)+'</span><span>Coucher : '+C.clock(a.sunset[i],tz)+'</span></div></div></details>';}).join('')||'<p class="empty-text">Actualisez les prévisions.</p>';}
