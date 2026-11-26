@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 20,
-  "versionName": "0.7.6",
-  "file": "Meteo74-0.7.6.apk",
-  "size": 9445482,
-  "sha256": "d973dd61dab0a42645325e1c225e7da78d05901e7aa8d20ada2c5ef381a68f97",
-  "notes": "Icônes de la carte des prévisions agrandies de 20 %. En présence de nuages bas, la carte distingue « Nuages bas » et « Nuages bas et éclaircies » selon la couverture et l’ensoleillement prévus pour la localité."
+  "versionCode": 21,
+  "versionName": "0.7.7",
+  "file": "Meteo74-0.7.7.apk",
+  "size": 9446070,
+  "sha256": "389bf5addac05e45af29e43673b061b2c3311feb44daa4a1d7a142330dd04a35",
+  "notes": "Icônes météo agrandies sur la carte de prévisions et dans la liste des dix prochains jours."
 }

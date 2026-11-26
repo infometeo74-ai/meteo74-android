@@ -62,27 +62,15 @@
         }
         function paint() {
             if(!period) return;
+            let geometryChanged=false;
             for(const [key,item] of shown) {
-                const {town,symbol,width,marker}=item, value=entry(key)?.values[period.key];
-                const bbox=value && art[value.icon];
-                const id=bbox?value.icon:'';
-                if(symbol.dataset.icon!==id) {
-                    symbol.dataset.icon=id;symbol.replaceChildren();
-                    if(bbox) {
-                        const [x,y,w,h]=bbox,factor=width/Math.max(w,h),img=document.createElement('img');
-                        const height=h*factor;
-                        symbol.style.width=w*factor+'px';symbol.style.height=height+'px';
-                        Object.assign(img.style,{left:-x*factor+'px',top:-y*factor+'px',width:384*factor+'px',height:384*factor+'px'});
-                        img.src='assets/weather/hd/'+id+'.webp';img.alt='';img.draggable=false;
-                        symbol.append(img);
-                    } else {
-                        symbol.style.width='';symbol.style.height='';
-                        const missing=document.createElement('span');missing.className='fm-missing';missing.textContent='·';symbol.append(missing);
-                    }
-                }
-                const title=town.name+' · '+(value?.label||'Prévision indisponible');
-                const el=marker.getElement();el.setAttribute('aria-label',title);el.title=title;
+                const value=entry(key)?.values[period.key];
+                const id=art[value?.icon]?value.icon:'';
+                if(item.icon!==id){item.icon=id;geometryChanged=true;}
+                const title=item.town.name+' · '+(value?.label||'Prévision indisponible');
+                const el=item.marker.getElement();el.setAttribute('aria-label',title);el.title=title;
             }
+            if(geometryChanged)layoutSymbols([...shown.values()]);
             if(openKey && shown.has(openKey)) {
                 const item=shown.get(openKey);
                 if(item.marker.isPopupOpen()) item.marker.getPopup().setContent(tip(item.town));
@@ -161,13 +149,13 @@
             const rows=detailed?await root.MeteoMapPlaces.placesIn(bounds,true):[];
             if(!active||token!==revision)return;
             const sites=[],keys=new Set(),unit=Math.min(size.x/860,size.y/803);
-            const baseWidth=1.20*Math.max(19,Math.min(45,57*unit));
+            const baseWidth=1.56*Math.max(19,Math.min(45,57*unit));
             function add(town,isDetail) {
                 const key=keyOf(town);if(keys.has(key)||!bounds.contains([town.lat,town.lon]))return;
                 const p=map.latLngToContainerPoint([town.lat,town.lon]);
-                const width=town.major?baseWidth:Math.max(21,baseWidth*52/57);
+                const width=town.major?baseWidth:Math.max(27.3,baseWidth*52/57);
                 if(p.x<width/2||p.x>size.x-width/2||p.y<width/2||p.y>size.y-width/2)return;
-                if(isDetail && sites.some(s=>p.distanceTo(s.p)<Math.max(49,baseWidth*1.6)))return;
+                if(isDetail && sites.some(s=>p.distanceTo(s.p)<Math.max(49,baseWidth*1.25)))return;
                 keys.add(key);sites.push({town,key,p,width});
             }
             assets.towns.forEach(t=>add(t,false));
@@ -180,54 +168,112 @@
                 if(sites.length>=cap)break;
                 add({name,lat:y/10000,lon:x/10000,caption:name},true);
             }
-            const origin=map.getContainer().getBoundingClientRect();
-            const boxes=Array.from(map.getContainer().querySelectorAll('.leaflet-control')).map(node=>{
-                const r=node.getBoundingClientRect();return [r.left-origin.left-2,r.top-origin.top-2,r.right-origin.left+2,r.bottom-origin.top+2];
-            });
-            for(const {p,width} of sites) boxes.push([p.x-width/2,p.y-width/2,p.x+width/2,p.y+width/2]);
             layer.clearLayers();shown=new Map();
-            // Keep the approved captions first when a narrow screen leaves room for fewer names.
             for(const site of sites) {
-                const {town,key,p,width}=site,symbol=document.createElement('span'),wrap=document.createElement('span');
+                const {town,key,width}=site,symbol=document.createElement('span'),wrap=document.createElement('span');
                 wrap.className='fm-pin';symbol.className='fm-glyph';wrap.append(symbol);
-                const label=town.caption || (detailed?town.name:'');
-                if(label) {
-                    const font=Math.max(size.x<330?9:10,Math.min(13,Math.round(19*unit))), height=font+3;
-                    measure.font='600 '+font+'px system-ui,sans-serif';
-                    const w=Math.ceil(measure.measureText(label).width), gap=width/2+2;
-                    const offsets=[];
-                    for(const dy of [gap,-gap-height]) {
-                        for(const ratio of [-.5,-.7,-.3,-.9,-.1]) offsets.push([w*ratio,dy]);
-                    }
-                    for(const dx of [-gap-w,gap]) {
-                        for(const dy of [-height/2,-height,0]) offsets.push([dx,dy]);
-                    }
-                    for(const dy of [gap+4,-gap-height-4]) {
-                        for(const ratio of [-.5,-.8,-.2]) offsets.push([w*ratio,dy]);
-                    }
-                    if(!detailed) {
-                        for(const vertical of [0,2,5,8]) {
-                            for(let shift=2;shift<=w/2;shift+=2) {
-                                for(const dx of [-w/2+shift,-w/2-shift]) offsets.push([dx,gap+vertical],[dx,-gap-height-vertical]);
-                            }
-                        }
-                    }
-                    for(const [dx,dy] of offsets) {
-                        const b=[p.x+dx-2,p.y+dy-1,p.x+dx+w+2,p.y+dy+height+1];
-                        if(b[0]<1||b[1]<1||b[2]>size.x-1||b[3]>size.y-1||boxes.some(v=>overlap(v,b)))continue;
-                        const caption=document.createElement('span');caption.className='fm-name';caption.textContent=label;
-                        Object.assign(caption.style,{left:dx+'px',top:dy+'px',fontSize:font+'px',lineHeight:height+'px'});
-                        wrap.append(caption);boxes.push(b);break;
-                    }
-                }
                 const hit=Math.round(Math.max(32,width+3));
                 const marker=L.marker([town.lat,town.lon],{title:town.name,alt:town.name,keyboard:true,
                     icon:L.divIcon({className:'fm-marker',html:wrap,iconSize:[hit,hit],iconAnchor:[hit/2,hit/2]})}).addTo(layer);
                 marker.bindPopup(()=>tip(town),{closeButton:true,autoPan:false,offset:[0,-width/2]});
                 marker.on('popupopen',()=>{openKey=key;});
-                shown.set(key,{town,marker,symbol,width});
+                shown.set(key,{...site,marker,symbol,wrap});
             }
             paint();pump();
+        }
+        function layoutSymbols(sites) {
+            for(const site of sites){
+                const bounds=art[site.icon];
+                site.factor=bounds?site.width/Math.max(bounds[2],bounds[3]):1;
+                site.drawWidth=bounds?bounds[2]*site.factor:8;
+                site.drawHeight=bounds?bounds[3]*site.factor:8;
+                site.scale=1;
+            }
+            // Clouds are wide and shallow. Only limit artwork whose actual bounds meet a neighbour.
+            for(let i=0;i<sites.length;i++){
+                const a=sites[i];
+                for(let j=i+1;j<sites.length;j++){
+                    const b=sites[j];
+                    const across=2*(Math.abs(a.p.x-b.p.x)-1.5)/(a.drawWidth+b.drawWidth);
+                    const down=2*(Math.abs(a.p.y-b.p.y)-1.5)/(a.drawHeight+b.drawHeight);
+                    const available=Math.max(0,across,down);
+                    a.scale=Math.min(a.scale,available);b.scale=Math.min(b.scale,available);
+                }
+            }
+            for(const site of sites){
+                const {symbol,icon}=site,bounds=art[icon];
+                if(symbol.dataset.icon!==icon){
+                    symbol.dataset.icon=icon;symbol.replaceChildren();
+                    if(bounds){
+                        const img=new Image();img.src='assets/weather/hd/'+icon+'.webp';img.alt='';img.draggable=false;symbol.append(img);
+                    }else{
+                        const dot=document.createElement('span');dot.className='fm-missing';symbol.append(dot);
+                    }
+                }
+                site.drawWidth*=site.scale;site.drawHeight*=site.scale;
+                symbol.style.width=site.drawWidth+'px';symbol.style.height=site.drawHeight+'px';
+                if(bounds){
+                    const factor=site.factor*site.scale;
+                    Object.assign(symbol.firstChild.style,{left:-bounds[0]*factor+'px',top:-bounds[1]*factor+'px',width:384*factor+'px',height:384*factor+'px'});
+                }
+            }
+            const size=map.getSize(),unit=Math.min(size.x/860,size.y/803),detailed=map.getZoom()-overviewZoom>=.48;
+            const origin=map.getContainer().getBoundingClientRect();
+            const boxes=Array.from(map.getContainer().querySelectorAll('.leaflet-control')).map(node=>{
+                const r=node.getBoundingClientRect();return [r.left-origin.left-2,r.top-origin.top-2,r.right-origin.left+2,r.bottom-origin.top+2];
+            });
+            for(const {p,drawWidth:w,drawHeight:h} of sites)boxes.push([p.x-w/2,p.y-h/2,p.x+w/2,p.y+h/2]);
+            const labels=[];
+            for(const site of sites){
+                const {town,p,wrap}=site;
+                wrap.querySelector('.fm-name')?.remove();
+                const label=town.caption || (detailed?town.name:'');
+                if(label) {
+                    const font=Math.max(size.x<330?9:10,Math.min(13,Math.round(19*unit))), height=font+3;
+                    measure.font='600 '+font+'px system-ui,sans-serif';
+                    const w=Math.ceil(measure.measureText(label).width);
+                    const gapX=site.drawWidth/2+2,gapY=site.drawHeight/2+2;
+                    const offsets=[];
+                    for(const dy of [gapY,-gapY-height]) {
+                        for(const ratio of [-.5,-.7,-.3,-.9,-.1]) offsets.push([w*ratio,dy]);
+                    }
+                    for(const dx of [-gapX-w,gapX]) {
+                        for(const dy of [-height/2,-height,0]) offsets.push([dx,dy]);
+                    }
+                    for(const dy of [gapY+4,-gapY-height-4]) {
+                        for(const ratio of [-.5,-.8,-.2]) offsets.push([w*ratio,dy]);
+                    }
+                    if(!detailed) {
+                        for(const vertical of [0,2,5,8,12]) {
+                            for(let shift=2;shift<=w/2+gapX;shift+=2) {
+                                for(const dx of [-w/2+shift,-w/2-shift]) offsets.push([dx,gapY+vertical],[dx,-gapY-height-vertical]);
+                            }
+                        }
+                        for(const extra of [0,-2,2,-4,4,6]) {
+                            for(const dx of [-gapX-w-extra,gapX+extra]) {
+                                for(let dy=-height-gapY;dy<=gapY;dy+=2)offsets.push([dx,dy]);
+                            }
+                        }
+                    }
+                    const positions=[];
+                    for(const [dx,dy] of offsets){
+                        const rect=[p.x+dx-2,p.y+dy-1,p.x+dx+w+2,p.y+dy+height+1];
+                        if(rect[0]>=1&&rect[1]>=1&&rect[2]<=size.x-1&&rect[3]<=size.y-1&&!boxes.some(box=>overlap(box,rect)))
+                            positions.push({dx,dy,rect});
+                    }
+                    if(positions.length)labels.push({wrap,label,font,height,positions});
+                }
+            }
+            // On the overview, reserve space for the names with the fewest workable positions first.
+            if(!detailed)labels.sort((a,b)=>a.positions.length-b.positions.length);
+            const occupied=[];
+            for(const {wrap,label,font,height,positions} of labels){
+                const best=positions.find(pos=>!occupied.some(box=>overlap(box,pos.rect)));
+                if(!best)continue;
+                const caption=document.createElement('span');caption.className='fm-name';caption.textContent=label;
+                Object.assign(caption.style,{left:best.dx+'px',top:best.dy+'px',fontSize:font+'px',lineHeight:height+'px'});
+                wrap.append(caption);occupied.push(best.rect);
+            }
         }
         async function pump() {
             if(!active||request||!shown.size)return;

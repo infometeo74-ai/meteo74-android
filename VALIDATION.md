@@ -1,3 +1,9 @@
+# Météo74 0.7.7
+
+26 novembre 2026. APK Android `fr.meteo74.android`, version 21, signé avec le certificat de la 0.7.6. Taille de 9 446 070 octets, SHA-256 `389bf5addac05e45af29e43673b061b2c3311feb44daa4a1d7a142330dd04a35`. Les ressources embarquées, l’alignement ZIP et les 66 tests sont validés. Android Lint retourne six avertissements et zéro erreur.
+
+Sur le paquet signé, les 17 échéances ont été affichées aux largeurs de 320, 360, 393, 412 et 740 pixels CSS. Chaque vue conserve les 24 repères et les dix noms de la carte générale. Les contrôles géométriques n’ont détecté aucun recouvrement entre les pictogrammes, ni entre un nom et un pictogramme. La taille demandée augmente de 30 % par rapport à la 0.7.6 et s’ajuste localement si deux dessins risquent de se toucher. Les icônes des dix prévisions quotidiennes mesurent 56 pixels CSS. L’ouverture des fiches et la consultation des prévisions enregistrées hors connexion ont été vérifiées.
+
 # Météo74 0.7.6
 
 26 novembre 2026. APK Android `fr.meteo74.android`, version 20, signé avec le certificat de la 0.7.5. Taille de 9 445 482 octets, SHA-256 `d973dd61dab0a42645325e1c225e7da78d05901e7aa8d20ada2c5ef381a68f97`. Les ressources embarquées et l’alignement ZIP ont été contrôlés. Les 66 tests passent. Android Lint retourne six avertissements et zéro erreur.

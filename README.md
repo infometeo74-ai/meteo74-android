@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.6 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.7 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.6 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.6.apk)
+[Télécharger Météo74 0.7.7 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.7.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -14,7 +14,7 @@ Pour une première installation sur Android 7 ou plus récent, ouvre le lien dep
 
 Dans **Prévisions**, 24 localités de Haute-Savoie et des régions voisines constituent la vue d’ensemble. Dix repères portent un nom. En zoomant, les communes voisines apparaissent et chaque pictogramme ouvre sa prévision. Le bandeau sous la carte propose les moments de la journée à courte échéance, puis une carte par jour jusqu’au dixième jour et les tendances du onzième au quatorzième. Les échéances utilisent l’heure de Paris et les données locales d’[Open-Meteo](https://open-meteo.com/en/docs).
 
-Les icônes de prévision sont agrandies de 20 %. Pour les situations de nuages bas, la carte compare la couverture de l’étage bas, la couverture totale et la durée d’ensoleillement prévue sur le créneau. Elle indique « Nuages bas » sous une couche grise et « Nuages bas et éclaircies » lorsque des ouvertures diurnes laissent passer le soleil. En touchant la localité, on peut consulter les deux pourcentages de couverture.
+Les icônes de la carte de prévisions sont environ 30 % plus grandes que dans la 0.7.6. Dans la liste des dix prochains jours, elles occupent 56 pixels CSS. Pour les situations de nuages bas, la carte compare la couverture de l’étage bas, la couverture totale et la durée d’ensoleillement prévue sur le créneau. Elle indique « Nuages bas » sous une couche grise et « Nuages bas et éclaircies » lorsque des ouvertures diurnes laissent passer le soleil. En touchant la localité, on peut consulter les deux pourcentages de couverture.
 
 ## Accueil et favoris
 
