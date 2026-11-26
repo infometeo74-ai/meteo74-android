@@ -1,14 +1,18 @@
 # Météo74 pour Android
 
-Version 0.7.4 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.5 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.4 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.4.apk)
+[Télécharger Météo74 0.7.5 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.5.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
 À partir de Météo74 0.3.4, ouvre **Paramètres → Rechercher une mise à jour**, puis **Télécharger**. La première fois, Android peut te demander l’autorisation d’installer la mise à jour. Le téléchargement fonctionne en Wi-Fi ou sur données mobiles et peut reprendre après une interruption. L’application vérifie le fichier et la signature de Météo74 avant d’ouvrir l’installateur Android.
+
+## Carte des prévisions
+
+Dans **Prévisions**, 24 localités de Haute-Savoie et des régions voisines constituent la vue d’ensemble. Dix repères portent un nom. En zoomant, les communes voisines apparaissent et chaque pictogramme ouvre sa prévision. Le bandeau sous la carte propose les moments de la journée à courte échéance, puis une carte par jour jusqu’au dixième jour et les tendances du onzième au quatorzième. Les échéances utilisent l’heure de Paris et les données locales d’[Open-Meteo](https://open-meteo.com/en/docs).
 
 ## Accueil et favoris
 

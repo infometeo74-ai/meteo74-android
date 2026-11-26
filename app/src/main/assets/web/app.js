@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.7.4 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.7.5 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -254,6 +254,7 @@ function switchView(view,stationId){
     const before=state.view;
     if(before==='snow'&&view!=='snow')winter.leave();
     if(before==='webcams'&&view!=='webcams')webcams.leave();
+    if(before==='forecast'&&view!=='forecast')forecastMap.leave();
     if(before==='map'&&view!=='map')observations.leave();
     if(before==='now'&&view!=='now'){state.homeScroll=window.scrollY;winter.stopHome();}
     state.view=view;++refreshSequence;notice('');$('refresh').classList.remove('busy');
@@ -266,13 +267,18 @@ function switchView(view,stationId){
     });
     if(view==='radar')radar.enter();else radar.leave();
     if(view==='map')observations.enter();
+    if(view==='forecast')forecastMap.enter();
     if(view==='now'){renderPlaces();loadHome();}else if(view==='detail'||view==='forecast')loadFocus();
     updateCredits();
     window.scrollTo(0,view==='now'&&before!=='now'?state.homeScroll:0);
     if(view==='snow')winter.enter(stationId);
     if(view==='webcams')webcams.enter();
 }
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+    const fromDetail=state.view==='detail'&&b.closest('#view-detail')&&b.dataset.view==='forecast';
+    switchView(b.dataset.view);
+    if(fromDetail)$('forecast-local').scrollIntoView({block:'start'});
+});
 $('back-places').onclick=()=>switchView('now');
 $('forecast-place').onclick=()=>openSearch();
 function suggestedPlaces(){
@@ -322,6 +328,7 @@ function startFollowing(){
     renderPlaces();switchView('now');window.scrollTo(0,0);locationWatch.start(true);
 }
 const observations=MeteoObservations.create({$,icon,escape,fetchJSON,storage,service:MeteoService});
+const forecastMap=MeteoForecastMap.create({$,C,fetchJSON,storage});
 const webcams=MeteoWebcams.create({$,icon,escape,openDialog,catalog:MeteoWebcamCatalog,normalize:C.normalizeSearch});
 const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService,observations,isPinned:id=>state.stationIds.includes(id),pinStation,goHome:()=>switchView('now')});
 const radar=MeteoRadar.create({$,C,storage,icon,escape,fetchJSON,place:()=>activeEntry()?.place||null});
@@ -332,13 +339,14 @@ function refresh(force=false){
     else if(state.view==='snow')winter.refresh(force);
     else if(state.view==='webcams')webcams.refresh(force);
     else if(state.view==='now')loadHome(force);
-    else if(state.view==='forecast'||state.view==='detail')loadFocus(force);
+    else if(state.view==='forecast'){forecastMap.enter(force);loadFocus(force);}
+    else if(state.view==='detail')loadFocus(force);
 }
 $('refresh').onclick=()=>{
     if(state.following&&!state.geoDenied)locationWatch.start();
     refresh(true);
 };
-function pause(){locationWatch.pause();radar.suspend();observations.suspend();}
+function pause(){locationWatch.pause();radar.suspend();observations.suspend();forecastMap.leave();}
 function resume(){
     if(document.hidden)return;
     locationWatch.resume();if(state.following&&!state.geoDenied)locationWatch.start();

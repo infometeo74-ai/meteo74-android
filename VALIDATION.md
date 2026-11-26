@@ -1,3 +1,9 @@
+# Météo74 0.7.5
+
+26 novembre 2026. APK signé de `fr.meteo74.android`, version 19. Taille de 9 443 682 octets, SHA-256 `0e26c9ca80dd233ecaa6b2c3cf44f0b515e69b554c841c9ef9b0ee3a3fec11e1`. Le certificat correspond à celui de la 0.7.4. L’alignement ZIP et le contenu des ressources embarquées ont été vérifiés. Les 61 tests passent. Android Lint signale six avertissements et zéro erreur.
+
+La vue d’ensemble contient 24 coordonnées vérifiées, dont 20 mairies françaises et quatre centres de localité suisses. Sur des largeurs de 320, 393 et 740 pixels CSS, les 24 pictogrammes et les dix noms de la maquette sont visibles. Le test mobile du paquet signé a ouvert La Pesse, sélectionné une demi-journée puis le quatorzième jour, zoomé sur le Genevois et rouvert la carte avec les prévisions enregistrées hors connexion. Les données horaires et quotidiennes provenaient du service de prévisions en ligne.
+
 # Météo74 0.7.4
 
 26 novembre 2026. APK Android signé de `fr.meteo74.android`, version 18. Taille de 9 256 883 octets, SHA-256 `9ba1dd677e5634c20e8dbabbe83064317b5733e2302fc1b0f58797c6176decfe`. Le certificat correspond à celui de la 0.7.3. L’alignement et toutes les ressources embarquées ont été vérifiés. Les 56 tests passent. Android Lint signale six avertissements et zéro erreur.

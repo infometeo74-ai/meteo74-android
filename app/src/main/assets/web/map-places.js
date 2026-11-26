@@ -3,7 +3,7 @@
     'use strict';
     const files = new Map();
     const fonts = [
-        { size: 16, weight: 750 }, { size: 14, weight: 700 }, { size: 13, weight: 650 }
+        { size: 14.5, weight: 700 }, { size: 13, weight: 650 }, { size: 12, weight: 600 }
     ];
 
     function loadFile(key) {
@@ -27,8 +27,9 @@
         const major = new Set(['motorway', 'trunk', 'primary']);
         const rules = [
             polygon('land', (z, f) => greens.has(f.props.kind) ? '#d5dfd4' : '#e1e4dc'),
-            polygon('ocean', '#c6dce6'), polygon('water_polygons', '#bdd8e5'),
-            line('water_lines', '#b3cdd8', z => z < 11 ? 0.8 : 1.4),
+            polygon('ocean', '#91c3d4'),
+            polygon('water_polygons', (z, f) => f.props.kind === 'glacier' ? '#e8eeed' : '#68aec4'),
+            line('water_lines', '#80b4c5', z => z < 11 ? 0.8 : 1.4),
             polygon('buildings', '#d5d6cf'),
             {...line('streets', '#d1d1c9', z => z < 10 ? 0.6 : 1.1),
                 filter:(z, f) => !major.has(f.props.kind)},
@@ -60,6 +61,16 @@
             }
         }
         return cells;
+    }
+
+    async function placesIn(bounds, details) {
+        const overview = await loadFile('overview');
+        const entries = details ? [...detailCells(bounds)].filter(([key]) => overview.packs.includes(key)) : [];
+        const chunks = await Promise.all(entries.map(async ([key, ids]) => {
+            const pack = await loadFile(key).catch(() => ({}));
+            return ids.flatMap(cell => pack[cell] || []);
+        }));
+        return overview.places.concat(...chunks);
     }
 
     const touches = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
@@ -141,15 +152,8 @@
         async function refresh() {
             const id = ++revision;
             const zoom = map.getZoom(), bounds = map.getBounds();
-            const overview = await loadFile('overview');
-            if (id !== revision) return;
-            const cells = zoom >= 8 ? detailCells(bounds) : new Map();
-            const entries = [...cells].filter(([key]) => overview.packs.includes(key));
-            const chunks = await Promise.all(entries.map(async ([key, ids]) => {
-                const pack = await loadFile(key).catch(() => ({}));
-                return ids.flatMap(cell => pack[cell] || []);
-            }));
-            if (id === revision) draw(overview.places.concat(...chunks), zoom, bounds);
+            const rows = await placesIn(bounds, zoom >= 8);
+            if (id === revision) draw(rows, zoom, bounds);
         }
         function schedule() {
             if (raf) return;
@@ -159,5 +163,5 @@
         map.whenReady(schedule);
         return schedule;
     }
-    root.MeteoMapPlaces = {attach};
+    root.MeteoMapPlaces = {attach, basemap, placesIn};
 })(globalThis);

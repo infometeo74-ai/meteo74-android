@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 18,
-  "versionName": "0.7.4",
-  "file": "Meteo74-0.7.4.apk",
-  "size": 9256883,
-  "sha256": "9ba1dd677e5634c20e8dbabbe83064317b5733e2302fc1b0f58797c6176decfe",
-  "notes": "Cartes météo, neige et radars : fond sans écritures et noms de communes plus espacés. Les petites communes apparaissent en zoomant."
+  "versionCode": 19,
+  "versionName": "0.7.5",
+  "file": "Meteo74-0.7.5.apk",
+  "size": 9443682,
+  "sha256": "0e26c9ca80dd233ecaa6b2c3cf44f0b515e69b554c841c9ef9b0ee3a3fec11e1",
+  "notes": "Carte des prévisions en Haute-Savoie avec 24 localités et davantage de communes au zoom. Prévisions par période à court terme, par jour jusqu’à 10 jours et tendances du 11e au 14e jour. Lacs plus visibles et noms de villes plus discrets sur les cartes."
 }
