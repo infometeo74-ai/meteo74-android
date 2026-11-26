@@ -4,7 +4,7 @@
 const zone = 'Europe/Paris';
 const stampDay = epoch => new Intl.DateTimeFormat('fr-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(epoch);
 const number = value => Number.isFinite(value) ? value.toLocaleString('fr-FR',{maximumFractionDigits:1}) : '—';
-const normalize = text => String(text ?? '').normalize('NFD').replace(/\p{M}/gu,'').replace(/œ/gi,'oe').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const normalize = (root.MeteoCore || require('./core.js')).normalizeSearch;
 function matches(station, region, query) {
     const terms = normalize(query).split(' ').filter(Boolean);
     const haystack = normalize([station.name,region,station.domain,...station.areas.flatMap(a=>[a.name,a.landmark,a.summit])].join(' '));

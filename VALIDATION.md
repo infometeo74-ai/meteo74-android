@@ -1,3 +1,13 @@
+# Météo74 0.7.2
+
+26 novembre 2026. L’APK signé de l’application `fr.meteo74.android` porte le numéro 16 et utilise le même certificat que la 0.7.1. Taille de 6 092 292 octets, SHA-256 `be5eb8057b7597660417d8fe0278ff49a2535c8e74ba5acd77359abab421562e`. L’alignement ZIP et les fichiers embarqués ont été contrôlés. Les 53 tests passent. Android Lint signale cinq avertissements et zéro erreur.
+
+Les essais ont été réalisés dans Chromium en émulation mobile à partir des fichiers extraits de l’APK. Les 118 vignettes de webcams ont été chargées et décodées. Les 48 localités sont réparties en sept secteurs. La recherche a été essayée avec et sans accents, avec un filtre de secteur actif et avec une recherche sans résultat. Sept vues ont été ouvertes en grand, dont celles du Salève, de Sciez et de La Roche-sur-Foron.
+
+Sur les trois radars, les relevés successifs sont restés alignés avec le fond de carte et les heures affichées correspondent aux observations. Aucune image vide n’a été relevée pendant les séquences. La boucle, la pause, le déplacement du curseur, le zoom, la lecture d’intensité et les changements rapides de source ont été vérifiés.
+
+Les 113 PNG individuels de la collection approuvée ont été importés en conservant leur cadrage complet. Le canal alpha des WebP correspond pour chaque pixel aux originaux redimensionnés en 384 × 384. La deuxième image reprend le dernier soleil voilé de cirrus.
+
 # Météo74 0.7.0
 
 26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 14. Les 4 718 672 octets de l’APK signé donnent le SHA-256 `7082e9fc08a77153681e1952623709beff858e2cf160d0019c4b92bf062e7f3d`. Le certificat correspond à celui de la 0.6.1. Les 93 fichiers de l’interface correspondent aux sources. Les contrôles d’alignement ZIP et les 53 tests passent. Android Lint signale zéro erreur et cinq avertissements.

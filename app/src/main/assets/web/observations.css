@@ -27,7 +27,12 @@
 #obs-station-detail{padding:0 2px 8px}
 #view-map .weather-credits{margin-top:13px}
 @media(max-width:359px){.bottom-nav>button{font-size:10px;padding-left:1px;padding-right:1px}.obs-heading h1{font-size:23px}.obs-key{padding-left:10px;padding-right:10px}}
-.cam-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}
+.cam-search{margin:8px 0 9px;background:white}
+.cam-search input{font-size:16px}
+.cam-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin:4px 0 14px}
+.cam-tools label{max-width:100%;min-width:0}
+.cam-tools select{min-width:0;max-width:100%}
+.cam-empty{padding:20px 0;text-align:center}
 .cam-tools label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
 .cam-tools select{font:inherit;min-height:40px;background:white;color:#205467;border:1px solid #c5d6dd;border-radius:12px;padding:4px 8px}
 .cam-tools small,.cam-dialog small{color:#536e7b;font-size:12px}
@@ -42,7 +47,7 @@
 .cam-text{display:grid;gap:2px;padding:9px 10px 11px}
 .cam-text>b{font-size:15px;color:#163e50}
 .cam-text>span{font-size:12px;color:#345866}
-.cam-text time{font-size:10px;color:#526975;margin-top:4px}
+.cam-text time{font-size:12px;color:#526975;margin-top:4px}
 .cam-dialog{width:min(94vw,780px);padding:16px}
 .cam-full{margin-top:12px;border-radius:9px;overflow:hidden;min-height:100px}
 .cam-full img{width:100%;max-height:65dvh;object-fit:contain}

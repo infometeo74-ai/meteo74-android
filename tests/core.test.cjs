@@ -13,17 +13,19 @@ test('All weather codes resolve to bundled high-density artwork; fog, frost and 
  const files=new Set();
  for(const code of codes)for(const day of [true,false]){
   const file=C.weatherSymbol(code,day,35)+'.webp';
-  const bytes=fs.readFileSync(path.join(root,file));
-  assert.equal(bytes.toString('ascii',8,12),'WEBP');
-  assert.equal(bytes.toString('ascii',12,16),'VP8X');
-  assert.equal(bytes.readUIntLE(24,3)+1,336);
-  assert.equal(bytes.readUIntLE(27,3)+1,336);
   files.add(file);
  }
  const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../collection.json')));
  assert.equal(catalogue.length,113);
  assert.equal(new Set(catalogue.map(item=>item.id)).size,113);
- for(const item of catalogue){assert.ok(item.label);files.add(item.file);}
+ for(const item of catalogue){
+  assert.ok(item.label);files.add(item.file);
+  const bytes=fs.readFileSync(path.join(root,item.file));
+  assert.equal(bytes.toString('ascii',8,16),'WEBPVP8X');
+  assert.equal(bytes.readUIntLE(24,3)+1,384);
+  assert.equal(bytes.readUIntLE(27,3)+1,384);
+  assert.equal(bytes[20]&0x10,0x10); // The extended WebP carries an alpha channel.
+ }
  assert.deepEqual([...files].sort(),fs.readdirSync(root).sort());
  for(const code of [0,1,2,80,81,82,85,86,95])assert.notEqual(C.weatherSymbol(code,true,35),C.weatherSymbol(code,false,35));
  assert.notEqual(C.weatherSymbol(45),C.weatherSymbol(48));

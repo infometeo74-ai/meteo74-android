@@ -43,11 +43,6 @@ test('Snowline follows the location and observation time and keeps unavailable d
  assert.ok(Number.isNaN(S.clockSample({hourly:{time:[3600,7200],snowfall_height:[null,1250]}},5400)));
  const grid={west:6,south:46,nx:2,ny:2,step:.25};assert.equal(S.modelAt([900,1100,1000,1200],grid,6.125,46.125),1050);
 });
-test('Motion compensation follows a translated rain band and avoids drifting in dry weather',()=>{
- const n=S.trackingSize,one=new Float32Array(n*n),two=new Float32Array(n*n);
- for(let y=7;y<n-6;y++)for(let x=8;x<n-8;x++){one[y*n+x]=1+.7*Math.sin(x*.55+y*.8);two[(y+1)*n+x+2]=one[y*n+x];}
- assert.deepEqual(S.estimateMotion(one,two),[2/n,1/n]);assert.deepEqual(S.estimateMotion(new Float32Array(n*n),new Float32Array(n*n)),[0,0]);
-});
 test('Projection follows the actual viewport in France, Switzerland and Italy at high zoom',()=>{
  for(const [lon,lat] of [[6.63,45.93],[7.45,46.95],[7.69,45.07]]){
    const z=14,scale=256*2**z,left=(lon+180)/360*scale-143,top=(1-Math.asinh(Math.tan(lat*Math.PI/180))/Math.PI)/2*scale-121;

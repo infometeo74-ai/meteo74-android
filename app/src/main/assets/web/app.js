@@ -1,4 +1,4 @@
-/* Météo74 · Android 0.7.1 · Interface embarquée, données publiques en ligne. */
+/* Météo74 · Android 0.7.2 · Interface embarquée, données publiques en ligne. */
 (()=>{'use strict';
 const C=window.MeteoCore,$=id=>document.getElementById(id);
 const PRESETS=[{name:'Reignier-Ésery',latitude:46.13333,longitude:6.26667,admin2:'Haute-Savoie'},{name:'Annecy',latitude:45.8992,longitude:6.1294,admin2:'Haute-Savoie'},{name:'Annemasse',latitude:46.1944,longitude:6.2377,admin2:'Haute-Savoie'},{name:'Thonon-les-Bains',latitude:46.3705,longitude:6.4798,admin2:'Haute-Savoie'},{name:'Chamonix',latitude:45.9237,longitude:6.8694,admin2:'Haute-Savoie'},{name:'Sallanches',latitude:45.936,longitude:6.632,admin2:'Haute-Savoie'}];
@@ -20,10 +20,12 @@ const paths={snowflake:'<path d="M12 2v20M3.4 7l17.2 10M3.4 17L20.6 7M9 4l3 2 3-
 const icon=name=>'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.info)+'</svg>';
 function icons(root=document){root.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));}icons();
 function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+// Give the transparent collection a distinct asset URL on devices updating from 0.7.1.
+const weatherImage=file=>'assets/weather/hd/'+file+'?v=transparent-1';
 function weather(code,day=true,cloud,precip,details){
  const id=C.weatherSymbol(code,day,cloud,precip,details),label=escape(C.condition(code,day,cloud,precip,details).label);
  if(!id)return '<span class="weather-icon weather-unavailable" role="img" aria-label="'+label+'">—</span>';
- return '<img class="weather-icon" src="assets/weather/hd/'+id+'.webp" width="512" height="512" alt="'+label+'" decoding="async">';
+ return '<img class="weather-icon" src="'+weatherImage(id+'.webp')+'" width="384" height="384" alt="'+label+'" decoding="async">';
 }
 const collection=$('artwork-collection');
 collection.addEventListener('toggle',async()=>{
@@ -37,7 +39,7 @@ collection.addEventListener('toggle',async()=>{
   const fragment=document.createDocumentFragment();
   for(const item of entries){
    const figure=document.createElement('figure'),caption=document.createElement('figcaption'),img=new Image();
-   caption.textContent=item.label;img.src='assets/weather/hd/'+item.file;img.width=512;img.height=512;
+   caption.textContent=item.label;img.src=weatherImage(item.file);img.width=384;img.height=384;
    img.alt='';img.loading='lazy';img.decoding='async';figure.title=item.label;
    figure.append(caption,img);fragment.append(figure);
   }
@@ -320,7 +322,7 @@ function startFollowing(){
     renderPlaces();switchView('now');window.scrollTo(0,0);locationWatch.start(true);
 }
 const observations=MeteoObservations.create({$,icon,escape,fetchJSON,storage,service:MeteoService});
-const webcams=MeteoWebcams.create({$,icon,escape,openDialog});
+const webcams=MeteoWebcams.create({$,icon,escape,openDialog,catalog:MeteoWebcamCatalog,normalize:C.normalizeSearch});
 const winter=MeteoSnow.create({$,C,storage,icon,weather,escape,fetchJSON,catalog:SnowStations,service:MeteoService,observations,isPinned:id=>state.stationIds.includes(id),pinStation,goHome:()=>switchView('now')});
 const radar=MeteoRadar.create({$,C,storage,icon,escape,fetchJSON,place:()=>activeEntry()?.place||null});
 function refresh(force=false){

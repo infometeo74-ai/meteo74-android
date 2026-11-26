@@ -1,3 +1,6 @@
+Collection actuelle : 113 pictogrammes transparents fournis pour Météo74.
+Notice du jeu historique conservé dans artwork/originaux :
+
 Icons 128x128 dedicated for Mobydock's set of weather conditions.
 
 Copyright 2005 by Wojciech Grzanka. All rights reserved.

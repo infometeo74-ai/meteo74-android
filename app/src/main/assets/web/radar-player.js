@@ -7,10 +7,9 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
     const storedOpacity=Number(storage.get('radar.opacity',.75));let opacity=storedOpacity>=.2&&storedOpacity<=1?storedOpacity:.75;
     let map,marker,paint,shade,painter,paintView,shadeView,worker,local,metaAbort,view;
     let provider='swiss',frames=[],active=false,suspended=false,wants=true,metadataAt=0,metaSeq=0,sequence=0;
-    let index=0,progress=0,raf=0,lastTick=null,buffering=true,bufferStart=0,msPerFrame=0,sampleToken=0,terrainFailed=false,lastUI=0;
-    let warmPending=false,franceOverview=false,framing=false;
-    const still=[0,0];
-    const ready=new Map(),pending=new Set(),failed=new Set(),motions=new Map();
+    let index=0,progress=0,raf=0,lastTick=null,buffering=true,sampleToken=0,terrainFailed=false,lastUI=0;
+    let franceOverview=false,framing=false;
+    const ready=new Map(),pending=new Set(),failed=new Set();
     const ui=(id,value)=>{if($(id).textContent!==value)$(id).textContent=value;};
     const visible=()=>active&&!suspended&&!document.hidden;
     const timeFormat=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit'});
@@ -44,7 +43,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         if(failed.size)notes.push('Certaines images sont indisponibles.');
         if(terrainFailed)notes.push('Relief partiellement indisponible.');
         if(snow&&ready.get(frames[index]?.time)?.phaseReady===false)notes.push('Type de précipitations indisponible sur une partie de la carte.');
-        notes.push('Observations toutes les '+(provider==='europe'?'10':'5')+' min. Mouvement interpolé.');
+        notes.push('Observations toutes les '+(provider==='europe'?'10':'5')+' min. Heure de la mesure affichée.');
         notes.push(provider==='swiss'?'Touchez la carte pour lire une mesure.':'Touchez la carte pour lire l’intensité estimée.');
         if(provider!=='europe')notes.push('Hachures : mesure indisponible.');
         ui('radar-message',notes.join(' '));
@@ -87,11 +86,11 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         }).catch(()=>{ui('radar-message','Contour départemental indisponible.');});
         map.on('move zoom resize',reposition);
         map.on('dragstart zoomstart',()=>{if(!framing)franceOverview=false;});
-        map.on('resize',()=>{if(provider==='france'&&franceOverview)frameZone();});
+        map.on('resize',()=>{if(visible()&&provider==='france'&&franceOverview)frameZone();});
         map.on('moveend resize',()=>{if(visible()&&frames.length)prepare();});map.on('click',inspect);
         startRenderer();legend();controls();
     }
-    function closeImages(){for(const data of ready.values())data.image.close?.();ready.clear();pending.clear();failed.clear();motions.clear();}
+    function closeImages(){for(const data of ready.values())data.image.close?.();ready.clear();pending.clear();failed.clear();}
     function viewGeometry(){
         const p=map.getPixelBounds(),size=map.getSize(),padX=Math.ceil(size.x*.13),padY=Math.ceil(size.y*.13),z=map.getZoom();
         const left=p.min.x-padX,top=p.min.y-padY,cssW=size.x+padX*2,cssH=size.y+padY*2;
@@ -103,7 +102,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         const geom=viewGeometry(),bounds=map.getPixelBounds();
         if(!force&&view&&view.z===geom.z&&view.cssW===geom.cssW&&view.cssH===geom.cssH&&
             bounds.min.x>=view.left&&bounds.min.y>=view.top&&bounds.max.x<=view.left+view.cssW&&bounds.max.y<=view.top+view.cssH)return;
-        painter.hold();closeImages();terrainFailed=false;lastTick=null;buffering=true;bufferStart=performance.now();msPerFrame=0;
+        closeImages();terrainFailed=false;lastTick=null;buffering=true;progress=0;
         const g={...geom,id:++sequence,provider,snow,firstTime:frames[0].time,lastTime:frames[frames.length-1].time};view=g;
         send({type:'prepare',view:g});pump();schedule();
     }
@@ -132,12 +131,9 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         if(!frames.some(frame=>frame.time===m.key)){m.image?.close?.();pump();return;}
         if(m.type==='frame'){
             ready.set(m.key,m);
-            for(const match of m.motions)motions.set(match.from+'/'+match.to,match.offset);
-            warmNext();
-            msPerFrame=(performance.now()-bufferStart)/ready.size;
         }else if(m.type==='error'){
             failed.add(m.key);if(frames[index]?.time===m.key&&failed.size<frames.length){index=nextIndex(index);progress=0;lastTick=null;buffering=true;}
-            if(failed.size===frames.length){fail('Images radar indisponibles');return;}
+            if(failed.size===frames.length){painter.clear();paintView=null;ui('radar-time','—');fail('Images radar indisponibles');return;}
         }
         pump();schedule();messages();
     }
@@ -158,19 +154,6 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         const interval=RadarPlayback.interval(gap,provider==='europe'?600:300,j<=from);
         return {f,j,n,gap,...interval,a:ready.get(f.time),b:ready.get(n.time)};
     }
-    function motionFor(segment){return motions.get(segment.f.time+'/'+segment.n.time)||still;}
-    function warmNext(){
-        if(warmPending||!visible()||!wants||buffering)return;
-        warmPending=true;
-        const warm=()=>{
-            warmPending=false;
-            if(!visible()||paintView!==view||!view||!frames.length||!wants||buffering)return;
-            const next=pair(nextIndex(index));
-            if(next.connected&&next.a&&next.b)painter.prepareNext(next.a,next.b,motionFor(next),next.duration/speed);
-        };
-        if(root.requestIdleCallback)root.requestIdleCallback(warm,{timeout:48});
-        else setTimeout(warm,0);
-    }
     function tick(now){
         raf=0;if(!visible()||!frames.length||!view)return;
         let segment=pair();
@@ -180,10 +163,10 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
             lastTick=null;return; // A worker message wakes the player.
         }
         if(wants&&count>1&&!segment.b)buffering=true;
-        let elapsed=lastTick===null?0:Math.max(0,now-lastTick)*speed;
+        let elapsed=lastTick===null?0:Math.min(120,Math.max(0,now-lastTick))*speed;
         if(wants&&buffering){
             const period=RadarPlayback.observationDuration*(provider==='europe'?2:1);
-            buffering=!RadarPlayback.bufferSufficient(bufferedAhead(),remaining,count,period,speed,msPerFrame);
+            buffering=!RadarPlayback.bufferSufficient(bufferedAhead(),remaining,count,period,speed);
             elapsed=0;
         }
         let running=wants&&count>1&&!buffering&&!!segment.b;
@@ -197,24 +180,30 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
             }
             progress=timeInPair/segment.duration;
         }
-        const {a,b,f,n,gap}=segment,interpolate=segment.connected&&!!b,t=interpolate?progress:0;
+        const {a,b,f,n}=segment;
+        const adjacent=segment.connected&&!!b;
+        const fade=running&&adjacent?RadarPlayback.fadeFraction(progress):0;
         if(paintView!==view){paintView=view;position(paint,view);}
-        const changed=painter.show(a,interpolate?b:null,interpolate?motionFor(segment):still,t,segment.duration/speed,running,now);
-        if(changed&&running)warmNext();
+        painter.show(a,adjacent?b:null,fade);
         if(now-lastUI>=90||!running||!lastUI){
-            lastUI=now;const time=Math.round(f.time+t*gap),label=clock(time);ui('radar-time',label);
+            lastUI=now;const time=fade>=.5?n.time:f.time,label=clock(time);ui('radar-time',label);
             const range=$('radar-range');if(+range.value!==time)range.value=time;
-            const badge=wants&&buffering&&count>1?'Préparation · '+ready.size+'/'+count:(t>0?'Relecture · ':'Mesure · ')+label;
+            const badge=wants&&buffering&&count>1?'Préparation · '+ready.size+'/'+count:(running?'Relecture · ':'Mesure · ')+label;
             ui('radar-badge',badge);if(range.getAttribute('aria-valuetext')!==label)range.setAttribute('aria-valuetext',label);
         }
         if(running)schedule();
     }
     function nearest(time){let best=0;for(let i=1;i<frames.length;i++)if(Math.abs(frames[i].time-time)<Math.abs(frames[best].time-time))best=i;return best;}
+    function displayedIndex(){
+        if(!frames.length)return 0;
+        const p=pair();
+        return p.connected&&p.b&&RadarPlayback.fadeFraction(progress)>=.5?p.j:index;
+    }
     function seek(i){failed.delete(frames[i].time);index=i;progress=0;lastTick=null;buffering=true;wants=false;controls();pump();schedule();}
     let sampleLocation=null;
     function inspect(e){
         if(!view||paintView!==view||!ready.get(frames[index]?.time))return;
-        let i=index;if(progress>=.5){const j=nextIndex(index);if(j>i&&ready.has(frames[j].time))i=j;}
+        const i=displayedIndex();
         seek(i);sampleLocation=e.latlng;const pt=map.project(e.latlng,view.z);send({type:'sample',id:view.id,token:++sampleToken,frame:frames[i],lon:e.latlng.lng,lat:e.latlng.lat,x:(pt.x-view.left)/view.cssW,y:(pt.y-view.top)/view.cssH});
     }
     async function metadata(force=false){
@@ -247,7 +236,6 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
                     const keep=new Set(list.map(f=>f.time));
                     for(const [key,data] of ready)if(!keep.has(key)){data.image.close?.();ready.delete(key);}
                     for(const key of failed)if(!keep.has(key))failed.delete(key);
-                    for(const key of motions.keys())if(!key.split('/').every(time=>keep.has(Number(time))))motions.delete(key);
                     view.firstTime=first;view.lastTime=last;pump();schedule();
                 }else {range.value=frames[index].time;prepare(true);}
                 messages();
@@ -256,7 +244,7 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
         finally{if(seq===metaSeq)metaAbort=null;}
     }
     function cancelWork(){
-        cancelAnimationFrame(raf);raf=0;lastTick=null;painter?.hold();metaAbort?.abort();metaAbort=null;++metaSeq;
+        cancelAnimationFrame(raf);raf=0;lastTick=null;metaAbort?.abort();metaAbort=null;++metaSeq;
         if(view){send({type:'stop'});view=null;}closeImages();++sampleToken;
     }
     function enter(){
@@ -277,20 +265,24 @@ function create({$,C,storage,icon,escape,fetchJSON,place}) {
             }else if(provider==='europe'){
                 map.fitBounds([[39,-8],[60,25]],{padding:[5,5],animate:false});
             }else{
-                const p=place();map.setView(p?[p.latitude,p.longitude]:[46.02,6.38],8);
+                const p=place();map.setView(p?[p.latitude,p.longitude]:[46.02,6.38],8,{animate:false});
             }
         }finally{framing=false;}
     }
     function changeSource(name){
         if(name===provider)return;
         cancelWork();map.closePopup();provider=name;metadataAt=0;frames=[];index=0;progress=0;wants=true;paintView=null;painter.clear();
+        shadeView=null;shade.getContext('2d').clearRect(0,0,shade.width,shade.height);
         ui('radar-time','—');ui('radar-first','—');ui('radar-last','—');
         franceOverview=false;$('view-radar').dataset.zone=name;map.invalidateSize({pan:false});frameZone();
         legend();controls();metadata(true);
     }
     function refresh(){failed.clear();metadata(true);}
     for(const name of ['swiss','france','europe'])$('radar-'+name).onclick=()=>changeSource(name);
-    $('radar-play').onclick=()=>{wants=!wants;lastTick=null;if(wants){buffering=true;map?.closePopup();}controls();pump();schedule();};
+    $('radar-play').onclick=()=>{
+        if(wants){seek(displayedIndex());return;}
+        wants=true;lastTick=null;buffering=true;map?.closePopup();controls();pump();schedule();
+    };
     $('radar-range').addEventListener('input',e=>{if(frames.length){map.closePopup();seek(nearest(Number(e.target.value)));}});
     $('radar-speed').onchange=e=>{const n=Number(e.target.value);if(speeds.includes(n)){speed=n;lastTick=null;storage.set('radar.speed',n);schedule();}};
     $('radar-snow').onchange=e=>{snow=e.target.checked;storage.set('radar.snow',snow);map?.closePopup();legend();ui('radar-badge','Actualisation des couches…');prepare(true);};

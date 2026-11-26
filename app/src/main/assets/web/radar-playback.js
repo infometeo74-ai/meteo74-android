@@ -1,35 +1,34 @@
-/* Move already prepared radar observations on compositor layers. */
+/* Frames share a geographic extent. Only Leaflet positions their parent on the map. */
 (function (root) {
     'use strict';
-    const observationDuration = 820; // screen milliseconds per five weather minutes at 1×
+    const observationDuration = 820; // Screen milliseconds per five weather minutes at 1×.
+
     function interval(gap, cadence, wraps) {
         const connected = !wraps && gap > 0 && gap <= cadence * 1.51;
-        return {connected, duration: connected ? observationDuration * gap / 300 : 360};
+        const duration = connected ? observationDuration * gap / 300 : wraps ? 1600 : observationDuration;
+        return {connected, duration};
     }
-    function bufferSufficient(ahead, outstanding, count, period, speed, loadTime) {
+
+    function bufferSufficient(ahead, outstanding, count, period, speed) {
         if (!outstanding) return ahead > 0;
-        const minimum = Math.min(count, Math.max(3, 1 + Math.ceil(1600 * speed / period)));
-        const runway = (ahead - 1) * period / speed;
-        return ahead >= minimum && runway >= Math.min((count - 1) * period / speed, outstanding * loadTime * 1.35);
+        // Start with a short runway. At a slow connection hold the last observation when needed.
+        const target = Math.min(count, 5, Math.max(2, 1 + Math.ceil(900 * speed / period)));
+        return ahead >= target;
     }
+
+    // Hold each source image, then briefly dissolve into the next adjacent observation.
+    function fadeFraction(progress) {
+        return Math.max(0, Math.min(1, (progress - .8) / .2));
+    }
+
     function createPainter(container) {
-        const layers = Array.from({length: 3}, () => {
+        const layers = Array.from({length: 2}, () => {
             const node = document.createElement('canvas');
             node.className = 'radar-keyframe';
             container.appendChild(node);
-            return {node, ctx: node.getContext('2d'), frame: null};
+            return {node, ctx: node.getContext('2d'), frame: null, opacity: -1};
         });
-        const canAnimate = typeof layers[0].node.animate === 'function';
-        const offset = (x, y) => 'translate3d(' + x * 100 + '%,' + y * 100 + '%,0)';
-        const state = (position, opacity, motion) => ({
-            transform: offset(position * motion[0], position * motion[1]), opacity
-        });
-        let first, second, shownA, shownB, current, upcoming, lastPosition = -1;
 
-        function hide(layer) {
-            layer.node.style.opacity = 0;
-            layer.node.style.visibility = 'hidden';
-        }
         function upload(layer, frame) {
             if (layer.frame === frame) return;
             const {image} = frame, {node, ctx} = layer;
@@ -41,93 +40,33 @@
             ctx.drawImage(image, 0, 0);
             layer.frame = frame;
         }
-        function cancel(segment) {
-            if (segment) for (const animation of segment.animations) animation.cancel();
+
+        function opacity(layer, value) {
+            if (layer.opacity === value) return;
+            layer.node.style.opacity = value;
+            layer.node.style.visibility = value > 0 ? 'visible' : 'hidden';
+            layer.opacity = value;
         }
-        function discardUpcoming() {
-            if (!upcoming) return;
-            cancel(upcoming);
-            hide(upcoming.to);
-            upcoming = null;
+
+        function show(frame, next, fraction) {
+            const current = layers.find(layer => layer.frame === frame) || layers.find(layer => layer.frame !== next) || layers[0];
+            const other = current === layers[0] ? layers[1] : layers[0];
+            upload(current, frame);
+            if (next) upload(other, next);
+            opacity(current, next ? 1 - fraction : 1);
+            opacity(other, next ? fraction : 0);
         }
-        function animate(from, to, motion, duration, start, fill) {
-            const options = {duration, fill, easing: 'linear'};
-            const outgoing = from.node.animate([state(0, 1, motion), state(1, 0, motion)], options);
-            const incoming = to.node.animate([state(-1, 0, motion), state(0, 1, motion)], options);
-            outgoing.startTime = incoming.startTime = start;
-            return {from, to, duration, start, animations: [outgoing, incoming]};
-        }
-        function show(a, b, motion, t, duration, run, now) {
-            const changed = a !== shownA || b !== shownB;
-            const moving = !!(b && run && canAnimate);
-            if (!changed && moving && current?.duration === duration) return false;
-            if (!changed && !moving && !current && t === lastPosition) return false;
-            const start = now - t * duration;
-            // A scheduled animation has already crossed the boundary on the compositor.
-            if (moving && upcoming && upcoming.from.frame === a && upcoming.to.frame === b &&
-                    upcoming.duration === duration && Math.abs(upcoming.start - start) < 3) {
-                cancel(current);
-                hide(first);
-                current = upcoming;
-                upcoming = null;
-                first = current.from;
-                second = current.to;
-            } else {
-                discardUpcoming();
-                cancel(current);
-                current = null;
-                first = layers.find(layer => layer.frame === a) || layers.find(layer => layer.frame !== b) || layers[0];
-                second = b ? (layers.find(layer => layer !== first && layer.frame === b) || layers.find(layer => layer !== first)) : null;
-                for (const layer of layers) if (layer !== first && layer !== second) hide(layer);
-                upload(first, a);
-                first.node.style.visibility = 'visible';
-                Object.assign(first.node.style, state(t, 1 - t, motion));
-                if (second) {
-                    upload(second, b);
-                    second.node.style.visibility = 'visible';
-                    Object.assign(second.node.style, state(t - 1, t, motion));
-                    if (moving) current = animate(first, second, motion, duration, start, 'both');
-                }
-            }
-            shownA = a;
-            shownB = b;
-            lastPosition = t;
-            return changed || moving;
-        }
-        function prepareNext(a, b, motion, duration) {
-            if (!second || a !== shownB || !b || b === shownA) return;
-            if (upcoming && upcoming.to.frame === b && upcoming.duration === duration) return;
-            discardUpcoming();
-            const spare = layers.find(layer => layer !== first && layer !== second);
-            upload(spare, b);
-            if (!current) { hide(spare); return; }
-            spare.node.style.opacity = 0;
-            spare.node.style.visibility = 'visible';
-            // 'forwards' leaves both elements' current effects intact until this future start time.
-            upcoming = animate(second, spare, motion, duration, current.start + current.duration, 'forwards');
-        }
-        function hold() {
-            discardUpcoming();
-            if (current) for (const animation of current.animations) animation.pause();
-            // Keep the paused picture until a new view or a resumed segment takes over.
-            if (current) current.duration = -1;
-            lastPosition = -1;
-        }
+
         function clear() {
-            discardUpcoming();
-            cancel(current);
-            current = null;
             for (const layer of layers) {
-                hide(layer);
+                opacity(layer, 0);
                 layer.frame = null;
                 layer.ctx.clearRect(0, 0, layer.node.width, layer.node.height);
             }
-            first = second = shownA = shownB = null;
-            lastPosition = -1;
         }
-        return {show, prepareNext, clear, hold};
+        return {show, clear};
     }
-    const api = {interval, bufferSufficient, createPainter, observationDuration};
+    const api = {interval, bufferSufficient, createPainter, fadeFraction, observationDuration};
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.RadarPlayback = api;
 })(globalThis);

@@ -1,5 +1,6 @@
 (function(root){
 'use strict';
+const normalizeSearch = text => String(text ?? '').normalize('NFD').replace(/\p{M}/gu,'').replace(/œ/gi,'oe').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
 const fmt=(v,d=0)=>finite(v)?(Math.abs(v)<.5*Math.pow(10,-d)?0:v).toLocaleString('fr-FR',{maximumFractionDigits:d,minimumFractionDigits:0}):'—';
 // The same bundled artwork serves the current conditions and both forecast lists.
@@ -105,6 +106,6 @@ function dailyCloud(data,i){
 function validForecast(d){return d&&finite(d.current?.time)&&Array.isArray(d.hourly?.time)&&Array.isArray(d.daily?.time)&&typeof d.timezone==='string';}
 function direction(v){return finite(v)?['N','NE','E','SE','S','SO','O','NO'][Math.round(v/45)%8]:'—';}
 function scale(values){const clean=values.filter(finite);if(!clean.length)return null;let low=Math.floor(Math.min(...clean))-1,high=Math.ceil(Math.max(...clean))+1;return {low,high,ratio:v=>(v-low)/(high-low)};}
-const api={finite,fmt,condition,weatherSymbol,validPlace,placeKey,forecastURL,date,clock,hours,dailyCloud,validForecast,direction,scale};
+const api={finite,fmt,normalizeSearch,condition,weatherSymbol,validPlace,placeKey,forecastURL,date,clock,hours,dailyCloud,validForecast,direction,scale};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MeteoCore=api;
 })(typeof window!=='undefined'?window:globalThis);

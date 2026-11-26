@@ -1,117 +1,199 @@
-// Météo74 · images publiques proposées par les offices de tourisme et les domaines.
 (function(root){
 'use strict';
-const sources={
- "annecy": "https://www.lac-annecy.com/webcams/",
- "clusaz": "https://www.laclusaz.com/webcams/",
- "bornand": "https://www.legrandbornand.com/webcams/",
- "chatel": "https://www.chatel.com/webcams/",
- "gets": "https://www.lesgets.com/webcams/",
- "brevent": "https://domaineschamonix.montblancnaturalresort.com/fr/info-live/brevent",
- "flegere": "https://domaineschamonix.montblancnaturalresort.com/fr/info-live/flegere",
- "grands": "https://domaineschamonix.montblancnaturalresort.com/fr/info-live/grands-montets",
- "balme": "https://domaineschamonix.montblancnaturalresort.com/fr/info-live/balme",
- "massif": "https://www.grand-massif.com/webcams/"
-};
-const cameras=[
- ["Annecy", "Vue sur le lac", "Lac d’Annecy", "annecy", "mega_annecy"],
- ["Doussard", "Plage du Bout-du-Lac", "Lac d’Annecy", "annecy", "2gUqi-p9lYX-Jbt5V-5LJfy"],
- ["Talloires", "Baie de Talloires", "Lac d’Annecy", "annecy", "pere-bise_auberge"],
- ["Semnoz", "Sommet du télémix", "Lac d’Annecy", "annecy", "mega_semnoz_somnoz-sommet-tmx"],
- ["La Clusaz", "Plateau de Beauregard", "Aravis et Bornes", "clusaz", "la-clusaz_beauregard"],
- ["La Clusaz", "Massif de l’Étale", "Aravis et Bornes", "clusaz", "la-clusaz_massif-de-l-etale"],
- ["Le Grand-Bornand", "Le village", "Aravis et Bornes", "bornand", "qGF7r-nm5xr-GdeyA-KsJVW"],
- ["Le Grand-Bornand", "Le Chinaillon", "Aravis et Bornes", "bornand", "1vkjM-btDJb-I0RrE-GfIeL"],
- ["Le Grand-Bornand", "Mont Lachat", "Aravis et Bornes", "bornand", "TWYys-vfsKu-ZeRxz-0YTRq"],
- ["Plateau des Glières", "Le plateau", "Aravis et Bornes", "annecy", "mega_cg74_plateau-des-glieres"],
- ["Châtel", "Le village", "Chablais", "chatel", "chatel_village"],
- ["Châtel", "Lac de Vonnes", "Chablais", "chatel", "EBZ9O-Aw377-GbriG-1LWTl"],
- ["Châtel", "Sommet du Morclan", "Chablais", "chatel", "chatel_morclan"],
- ["Les Gets", "Panorama des pistes", "Chablais", "gets", "RwG3k-rmnHA-mK6y9-coMkh"],
- ["Flaine", "Le Forum", "Grand Massif", "massif", "mega_grand-massif_flaine-1600"],
- ["Les Carroz", "Arrivée de la télécabine", "Grand Massif", "massif", "mega_carroz"],
- ["Morillon", "Les Esserts", "Grand Massif", "massif", "mega_grand-massif_morillon-1100"],
- ["Samoëns", "Tête des Saix", "Grand Massif", "massif", "mega_grand-massif_samoens-tete-des-saix"],
- ["Chamonix", "Le Brévent", "Mont-Blanc", "brevent", "xaWrY-m5fOs-XSrlx-8hsL4"],
- ["Les Praz", "La Flégère", "Mont-Blanc", "flegere", "AmGPg-3mU1u-abPyA-pZdTV"],
- ["Argentière", "Plateau de Lognan", "Mont-Blanc", "grands", "s97kZ-pTJy3-EHTnV-2B4qC"],
- ["Vallorcine", "Tête de Balme", "Mont-Blanc", "balme", "ZIRrq-eWGqc-8S4Zb-w3J8p"]
-];
 const minute=60000;
 const formatter=new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
-function photo(camera,large=false){
- const id=camera[4];
- return /^[a-z0-9]{5}(-[a-z0-9]{5}){3}$/i.test(id)?'https://api.skaping.com/'+id+'/media/latest/'+(large?'large':'small')+'.jpg':'https://www.trinum.com/ibox/ftpcam/'+id+'.jpg';
-}
-function create({$,icon,escape,openDialog}){
- const groups=[...new Set(cameras.map(c=>c[2]))],cache=new Map(),pending=new Map();
- let group='',visible=false,observer=null,activeId=null,detailGeneration=0,lastDraw=0;
- $('cam-area').innerHTML='<option value="">Toute la Haute-Savoie</option>'+groups.map(x=>'<option>'+escape(x)+'</option>').join('');
- function dated(time){
-  return time?(Date.now()-time>86400000?'Dernière image · ':'Image du ')+formatter.format(time):'Heure de l’image non publiée';
- }
- async function load(id,large=false,force=false){
-  const camera=cameras[id],url=photo(camera,large),old=cache.get(url);
-  if(!force&&old&&Date.now()-old.at<5*minute)return old;
-  if(pending.has(url))return pending.get(url).task;
-  const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),16000);
-  const job=(async()=>{
-   const res=await fetch(url,{signal:ctl.signal,credentials:'omit',cache:force?'reload':'default'});
-   if(!res.ok||!res.headers.get('Content-Type')?.startsWith('image/'))throw Error('Image indisponible');
-   const blob=await res.blob();
-   if(ctl.signal.aborted||!blob.size)throw Error('Image indisponible');
-   const image=URL.createObjectURL(blob),time=Date.parse(res.headers.get('Last-Modified'));
-   const item={image,time:Number.isFinite(time)?time:null,at:Date.now()};
-   if(old)URL.revokeObjectURL(old.image);
-   cache.set(url,item);return item;
-  })().finally(()=>{clearTimeout(timeout);if(pending.get(url)?.ctl===ctl)pending.delete(url);});
-  pending.set(url,{ctl,task:job});return job;
- }
- function showImage(img,data){img.src=data.image;img.hidden=false;}
- async function card(button,force=false){
-  const id=Number(button.dataset.camera),time=button.querySelector('time'),img=button.querySelector('img');
-  try{
-   const data=await load(id,false,force);if(!visible||!button.isConnected)return;
-   showImage(img,data);time.textContent=dated(data.time);
-  }catch{
-   if(!visible||!button.isConnected)return;
-   const old=cache.get(photo(cameras[id]));
-   if(old){showImage(img,old);time.textContent=dated(old.time)+' · enregistrée';}
-   else time.textContent='Image indisponible';
-  }
- }
- function render(force=false){
-  if(!visible)return;lastDraw=Date.now();observer?.disconnect();
-  const list=cameras.map((c,id)=>({c,id})).filter(({c})=>!group||c[2]===group);
-  $('cam-count').textContent=list.length+' webcams';
-  $('cam-grid').innerHTML=list.map(({c,id})=>'<button class="cam-card" data-camera="'+id+'" aria-label="Agrandir la webcam · '+escape(c[0]+' · '+c[1])+'"><span class="cam-image">'+icon('camera')+'<img hidden alt="" decoding="async"></span><span class="cam-text"><b>'+escape(c[0])+'</b><span>'+escape(c[1])+'</span><time>Chargement…</time></span></button>').join('');
-  const buttons=[...$('cam-grid').children];
-  if('IntersectionObserver' in root){
-   observer=new IntersectionObserver(entries=>entries.filter(e=>e.isIntersecting).forEach(e=>{observer.unobserve(e.target);card(e.target,force);}),{rootMargin:'75px'});
-   buttons.forEach(b=>observer.observe(b));
-  }else buttons.forEach(b=>card(b,force));
- }
- async function detail(id,force=false){
-  const c=cameras[id],gen=++detailGeneration;activeId=id;
-  $('cam-title').textContent=c[0];$('cam-location').textContent=c[1]+' · '+c[2];$('cam-credit').href=sources[c[3]];
-  const img=$('cam-large'),small=cache.get(photo(c)),old=cache.get(photo(c,true));
-  const initial=old||small;
-  if(initial)showImage(img,initial);else{img.removeAttribute('src');img.hidden=true;}
-  $('cam-time').textContent=initial?dated(initial.time):'Chargement de l’image…';openDialog('cam-dialog');
-  try{
-   const data=await load(id,true,force);
-   if(gen!==detailGeneration||!$('cam-dialog').open)return;
-   showImage(img,data);$('cam-time').textContent=dated(data.time);
-  }catch{if(gen===detailGeneration)$('cam-time').textContent=initial?dated(initial.time)+' · agrandissement indisponible':'Image momentanément indisponible.';}
- }
- $('cam-area').onchange=()=>{group=$('cam-area').value;render();};
- $('cam-grid').onclick=e=>{const b=e.target.closest('[data-camera]');if(b)detail(Number(b.dataset.camera));};
- $('cam-retry').onclick=()=>{if(activeId!==null)detail(activeId,true);};
- $('cam-dialog').addEventListener('close',()=>{detailGeneration++;activeId=null;});
- return {enter(){visible=true;render();},refresh(force=false){if(visible&&(force||Date.now()-lastDraw>5*minute))render(force);},leave(){
-  visible=false;observer?.disconnect();for(const p of pending.values())p.ctl.abort();pending.clear();
-  $('cam-grid').replaceChildren();for(const x of cache.values())URL.revokeObjectURL(x.image);cache.clear();
- }};
+
+function create({$,icon,escape,openDialog,catalog,normalize}){
+    const {cameras,photo}=catalog;
+    const grid=$('cam-grid'),area=$('cam-area'),search=$('cam-search'),dialog=$('cam-dialog');
+    const cmp=new Intl.Collator('fr',{sensitivity:'base',numeric:true});
+    const groups=[...new Set(cameras.map(c=>c.area))].sort(cmp.compare);
+    const searchText=text=>normalize(text).replace(/\bst\b/g,'saint').replace(/\bste\b/g,'sainte');
+    const entries=cameras.map((camera,id)=>({
+        camera,id,text:searchText([camera.town,camera.title,camera.area].join(' '))
+    })).sort((a,b)=>cmp.compare(a.camera.town,b.camera.town)||cmp.compare(a.camera.title,b.camera.title));
+    area.innerHTML='<option value="">Toute la Haute-Savoie</option>'+groups.map(g=>'<option>'+escape(g)+'</option>').join('');
+
+    const cache=new Map(),pending=new Map(),nearby=new Set(),queue=new Map();
+    const imageData=new WeakMap();
+    let visible=false,observer=null,loading=0,active=null,revision=0,lastDraw=0;
+
+    function dated(time){
+        if(!time)return 'Heure de l’image non communiquée';
+        return (Date.now()-time>24*60*minute?'Image ancienne · ':'Image du ')+formatter.format(time);
+    }
+
+    async function load(camera,large,force){
+        const url=photo(camera,large),old=cache.get(url);
+        if(!force&&old&&Date.now()-old.at<5*minute){
+            cache.delete(url);cache.set(url,old);return old;
+        }
+        if(pending.has(url))return pending.get(url).task;
+        const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),16000);
+        const task=(async()=>{
+            let data;
+            if(camera.imageOnly){
+                // These municipalities publish embeddable JPEGs without cross-origin response headers.
+                const direct=new URL(url);
+                direct.searchParams.set('t',String(force?Date.now():Math.floor(Date.now()/(5*minute))));
+                data={url:direct.href,time:null};
+            }else{
+                const res=await fetch(url,{signal:ctl.signal,credentials:'omit',cache:force?'reload':'no-cache'});
+                if(!res.ok||!res.headers.get('Content-Type')?.startsWith('image/'))throw Error('Image indisponible');
+                const blob=await res.blob(),stamp=Date.parse(res.headers.get('Last-Modified'));
+                if(!blob.size||ctl.signal.aborted)throw Error('Image indisponible');
+                data={blob,time:Number.isFinite(stamp)?stamp:null};
+            }
+            data.at=Date.now();
+            cache.delete(url);cache.set(url,data);
+            // Only encoded files are cached. Offscreen cards release their decoded image.
+            if(cache.size>24)cache.delete(cache.keys().next().value);
+            return data;
+        })().finally(()=>{
+            clearTimeout(timeout);
+            if(pending.get(url)?.ctl===ctl)pending.delete(url);
+        });
+        pending.set(url,{ctl,task});return task;
+    }
+
+    function detach(img){
+        const current=imageData.get(img);
+        if(current?.objectURL)URL.revokeObjectURL(current.objectURL);
+        imageData.delete(img);img.removeAttribute('src');img.hidden=true;
+    }
+
+    async function display(img,data){
+        if(imageData.get(img)?.data===data&&!img.hidden)return;
+        detach(img);
+        const objectURL=data.blob?URL.createObjectURL(data.blob):null;
+        const current={data,objectURL};
+        imageData.set(img,current);img.src=objectURL||data.url;
+        try{
+            await img.decode();
+            if(imageData.get(img)===current)img.hidden=false;
+        }catch(error){
+            if(imageData.get(img)===current)detach(img);
+            throw error;
+        }
+    }
+
+    async function card(button,force){
+        const c=cameras[Number(button.dataset.camera)],time=button.querySelector('time'),img=button.querySelector('img');
+        const live=()=>visible&&button.isConnected&&nearby.has(button);
+        try{
+            let data;
+            try{data=await load(c,false,force);}
+            catch(error){
+                if(!live()||!navigator.onLine||photo(c)===photo(c,true))throw error;
+                data=cache.get(photo(c))||await load(c,true,false);
+            }
+            if(!live())return;
+            await display(img,data);
+            if(live())time.textContent=dated(data.time);
+        }catch{
+            if(!live())return;
+            const old=cache.get(photo(c));
+            if(old?.blob){
+                try{
+                    await display(img,old);
+                    if(live())time.textContent=dated(old.time)+' · enregistrée';
+                    return;
+                }catch{}
+            }
+            if(live())time.textContent='Image momentanément indisponible';
+        }
+    }
+
+    function pump(){
+        while(visible&&loading<4&&queue.size){
+            const [button,force]=queue.entries().next().value;
+            queue.delete(button);loading++;
+            card(button,force).finally(()=>{loading--;pump();});
+        }
+    }
+
+    function forgetCards(){
+        observer?.disconnect();nearby.clear();queue.clear();
+        for(const img of grid.querySelectorAll('img[src]'))detach(img);
+    }
+
+    function render(force=false){
+        if(!visible)return;
+        lastDraw=Date.now();forgetCards();
+        const terms=searchText(search.value).split(' ').filter(Boolean);
+        const list=entries.filter(({camera,text})=>(!area.value||camera.area===area.value)&&terms.every(t=>text.includes(t)));
+        const places=new Set(list.map(item=>item.camera.town)).size;
+        $('cam-count').textContent=list.length+' webcam'+(list.length>1?'s':'')+(places?' · '+places+' lieu'+(places>1?'x':''):'');
+        grid.innerHTML=list.map(({camera:c,id})=>
+            '<button class="cam-card" data-camera="'+id+'" aria-label="Agrandir la webcam · '+escape(c.town+' · '+c.title)+'">'+
+            '<span class="cam-image">'+icon('camera')+'<img hidden alt="" decoding="async" referrerpolicy="no-referrer"></span>'+
+            '<span class="cam-text"><b>'+escape(c.town)+'</b><span>'+escape(c.title)+'</span><time>Chargement…</time></span></button>'
+        ).join('');
+        $('cam-empty').hidden=list.length!==0;
+        if('IntersectionObserver' in root){
+            const refreshed=new WeakSet();
+            const current=new IntersectionObserver(changes=>{
+                if(current!==observer||!visible)return;
+                for(const {target,isIntersecting} of changes){
+                    if(isIntersecting){
+                        nearby.add(target);queue.set(target,force&&!refreshed.has(target));
+                        refreshed.add(target);
+                    }
+                    else{nearby.delete(target);queue.delete(target);detach(target.querySelector('img'));}
+                }
+                pump();
+            },{rootMargin:'160px'});
+            observer=current;
+            for(const button of grid.children)current.observe(button);
+        }else{
+            for(const button of grid.children){nearby.add(button);queue.set(button,force);}
+            pump();
+        }
+    }
+
+    async function detail(id,force=false){
+        const c=cameras[id],gen=++revision,img=$('cam-large'),status=$('cam-time');
+        const live=()=>revision===gen&&dialog.open;
+        const preview=cache.get(photo(c,true))||cache.get(photo(c));
+        active=id;
+        $('cam-title').textContent=c.town;$('cam-location').textContent=c.title+' · '+c.area;
+        $('cam-credit').href=c.source;
+        openDialog('cam-dialog');
+        status.textContent=preview?dated(preview.time):'Chargement de l’image…';
+        if(preview){
+            try{await display(img,preview);}catch{}
+            if(!live())return;
+        }else detach(img);
+        try{
+            const data=await load(c,true,force);
+            if(!live())return;
+            await display(img,data);
+            if(live())status.textContent=dated(data.time);
+        }catch{
+            if(!live())return;
+            if(preview){
+                try{await display(img,preview);}catch{}
+            }
+            if(live())status.textContent=preview&&!img.hidden?dated(preview.time)+' · agrandissement indisponible':'Image momentanément indisponible.';
+        }
+    }
+
+    search.addEventListener('input',()=>render());
+    area.onchange=()=>render();
+    grid.onclick=e=>{const button=e.target.closest('[data-camera]');if(button)detail(Number(button.dataset.camera));};
+    $('cam-reset').onclick=()=>{area.value='';search.value='';render();};
+    $('cam-retry').onclick=()=>{if(active!==null)detail(active,true);};
+    dialog.addEventListener('close',()=>{if(!dialog.open){revision++;active=null;detach($('cam-large'));}});
+    return {
+        enter(){visible=true;render();},
+        refresh(force=false){if(visible&&(force||Date.now()-lastDraw>5*minute))render(force);},
+        leave(){
+            visible=false;revision++;forgetCards();grid.replaceChildren();
+            for(const job of pending.values())job.ctl.abort();
+            pending.clear();cache.clear();
+            if(dialog.open)dialog.close();
+        }
+    };
 }
 root.MeteoWebcams={create};
 })(globalThis);

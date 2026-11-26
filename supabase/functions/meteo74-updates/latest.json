@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 15,
-  "versionName": "0.7.1",
-  "file": "Meteo74-0.7.1.apk",
-  "size": 5309918,
-  "sha256": "5f986f8da95ebd5f04d6a03ec8af2d40d605a2241e10187da5c18fcbddf6c3ae",
-  "notes": "113 nouveaux pictogrammes Météo74 sur l’accueil, les prévisions et les stations. Averses sous ciel couvert, manches à air et nuages bas."
+  "versionCode": 16,
+  "versionName": "0.7.2",
+  "file": "Meteo74-0.7.2.apk",
+  "size": 6092292,
+  "sha256": "be5eb8057b7597660417d8fe0278ff49a2535c8e74ba5acd77359abab421562e",
+  "notes": "118 webcams dans 48 lieux de Haute-Savoie, avec recherche. Lecture radar stabilisée sur les trois cartes. Nouvelle collection de 113 icônes transparentes, avec le soleil voilé corrigé."
 }

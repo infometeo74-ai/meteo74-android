@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.1 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.2 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.1.apk)
+[Télécharger Météo74 0.7.2 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.2.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -48,7 +48,7 @@ La fonction **meteo74-neige** interroge les sources configurées pour chaque fic
 
 ## Webcams
 
-L’onglet **Webcams** réunit 22 caméras du lac d’Annecy, des Aravis et Bornes, du Chablais, du Grand Massif et du massif du Mont-Blanc. Le sélecteur filtre les vues par secteur. Une pression sur une photo l’agrandit dans l’application. La date accompagne l’image lorsqu’elle est publiée par le diffuseur. Le lien de la fiche ouvre la webcam officielle. Les images sont chargées à mesure du défilement. [Lac d’Annecy Tourisme](https://www.lac-annecy.com/webcams/) · [Grand Massif](https://www.grand-massif.com/webcams/) · [Le Grand-Bornand](https://www.legrandbornand.com/webcams/)
+L’onglet **Webcams** présente 118 vues dans 48 lieux de Haute-Savoie. Rechercher une commune, une station ou un point de vue, ou choisir l’un des sept secteurs. Les vignettes se chargent au défilement. Toucher une image pour ouvrir la vue du diffuseur dans l’application et consulter sa date lorsqu’elle est publiée. [Thonon Léman Tourisme](https://www.thonon-leman-tourisme.com/organiser-son-sejour/informations-utiles/webcams/) · [Téléphérique du Salève](https://www.telepherique-du-saleve.com/webcam/) · [Cluses Arve & montagnes](https://www.cluses-montagnes-tourisme.com/nos-stations/webcams/)
 
 [Neige et stations](artwork/neige-stations.png) · [Galerie des webcams](artwork/webcams.png)
 
@@ -56,7 +56,7 @@ L’onglet **Webcams** réunit 22 caméras du lac d’Annecy, des Aravis et Born
 
 Ouvrir **Radar** pour lancer la relecture des deux dernières heures disponibles. Régler la vitesse à 0,5×, 1×, 2× ou 4×, mettre en pause ou choisir une image avec le curseur. La première image disponible s’affiche pendant le chargement. La lecture démarre automatiquement dès que la réserve d’images suffit pour la vitesse choisie. Un petit déplacement conserve les images déjà préparées. Après un grand déplacement ou un zoom, la carte prépare la nouvelle zone. La vitesse, l’option Neige et l’opacité sont mémorisées. L’onglet s’arrête lorsqu’on le quitte.
 
-Sur **Suisse & Alpes**, l’application lit les observations PRECIP de MétéoSuisse, espacées de cinq minutes sur une grille de 1 km. Deux observations se fondent en continu. Une troisième couche prépare la prochaine image. Le moteur de rendu estime les déplacements à la préparation des observations, puis le lecteur programme la transition suivante à l’avance. Le calcul du déplacement tient compte des mouvements inférieurs à une cellule de la grille de suivi. L’ouverture de la carte démarre la préparation des images en arrière-plan. Une coupure entre deux observations trop éloignées est conservée. L’horloge distingue la mesure de la relecture interpolée. Un appui sur la carte arrête la lecture et donne l’intensité en mm/h de l’observation la plus proche. La valeur vient de la cellule mesurée et les hachures repèrent les mesures absentes.
+Sur **Suisse & Alpes**, l’application lit les observations PRECIP de MétéoSuisse, espacées de cinq minutes sur une grille de 1 km. Les images restent calées sur la carte. Un fondu bref relie deux relevés consécutifs. Un trou dans les observations donne lieu à une coupe et la dernière image marque une pause avant la reprise de la boucle. L’horloge indique l’heure du relevé visible. Un appui sur la carte arrête la lecture sur ce relevé et donne son intensité en mm/h. La valeur vient de la cellule mesurée et les hachures repèrent les mesures absentes.
 
 Activer **Neige** pour distinguer en violet les précipitations probablement neigeuses sur le radar suisse. La limite pluie-neige horaire du modèle ICON-CH1 est interpolée à l’heure de chaque observation et comparée à l’altitude du terrain. Les couleurs représentent une intensité en équivalent eau. Si le modèle ou le terrain est indisponible, l’intensité reste visible et l’interface signale l’incertitude sur le type.
 
@@ -70,7 +70,7 @@ Les trois cartes utilisent la même échelle à neuf seuils en mm/h, avec le mê
 
 ## Météo locale
 
-Les 113 pictogrammes illustrés de Météo74 sont embarqués dans l’application et consultables dans **Paramètres → Collection de pictogrammes**.
+Les 113 pictogrammes proviennent des PNG transparents individuels du catalogue Météo74. Leurs proportions et leur canal alpha sont conservés dans les WebP de 384 × 384 px embarqués, consultables dans **Paramètres → Collection de pictogrammes**.
 
 ## Sources
 
@@ -83,7 +83,7 @@ Les 113 pictogrammes illustrés de Météo74 sont embarqués dans l’applicatio
 - [RainViewer](https://www.rainviewer.com/api/weather-maps-api.html) et sa [table d’encodage RGBA](https://www.rainviewer.com/api/color-schemes.html) pour le radar Europe et [OpenStreetMap](https://www.openstreetmap.org/copyright) pour la cartographie.
 - [Leaflet](https://leafletjs.com/), [Proj4js](https://github.com/proj4js/proj4js) et [jsfive](https://github.com/usnistgov/jsfive) sont embarqués avec leurs licences dans `app/src/main/assets/web/vendor/`.
 
-Les sources graphiques se trouvent dans `artwork/originaux` et `artwork/masters`. Pour régénérer la collection, exécuter `node artwork/prepare-icons.cjs` avec Node.js et sharp. Les images finales sont déjà intégrées à l’application.
+La collection actuelle se régénère avec Python et Pillow depuis le pack validé, avec la commande `python3 artwork/prepare-icons.py Meteo74_113_icones_transparentes.zip`. Chaque PNG est vérifié et redimensionné en entier. Les fichiers embarqués suffisent pour compiler l’application.
 
 ## Compiler le projet
 

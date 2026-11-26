@@ -4,7 +4,6 @@
 const colors=root.RadarColors||require('./radar-colors.js');
 const world = 256;
 const missing = 65535;
-const trackingSize = 40;
 const limit = (n, low, high) => Math.max(low, Math.min(high, n));
 const latitude = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180 / Math.PI;
 const longitude = x => x * 360 - 180;
@@ -76,49 +75,6 @@ function sampledRate(frame,coord,i) {
     const near=d[k+(x>=.5?1:0)+(y>=.5?w:0)];
     if(near===absent)return -1;
     return table?table[near]:near;
-}
-function tracking(field,w,h) {
-    const small=new Float32Array(trackingSize*trackingSize);
-    for(let y=0;y<trackingSize;y++)for(let x=0;x<trackingSize;x++) {
-        const k=Math.floor((y+.5)*h/trackingSize)*w+Math.floor((x+.5)*w/trackingSize);small[y*trackingSize+x]=field(k);
-    }
-    return small;
-}
-function estimateMotion(first,next) {
-    // Match precipitation structures on a small grid. Weak or dry matches use a plain dissolve.
-    const n=trackingSize,margin=5;
-    function cost(dx,dy) {
-        const ix=Math.floor(dx),iy=Math.floor(dy),fx=dx-ix,fy=dy-iy,offset=iy*n+ix;
-        let sum=0,valid=0;
-        for(let y=margin;y<n-margin;y+=2)for(let x=margin;x<n-margin;x+=2) {
-            const i=y*n+x,k=i+offset,a=first[i];
-            let b=next[k];if(a<0||b<0)continue;
-            if(fx||fy){
-                const right=next[k+1],lower=next[k+n],corner=next[k+n+1];
-                if(right<0||lower<0||corner<0)continue;
-                b=mix(mix(b,right,fx),mix(lower,corner,fx),fy);
-            }
-            if(a+b<.045)continue;
-            sum+=Math.min(Math.abs(a-b),2);valid++;
-        }
-        return valid<12?Infinity:sum/valid;
-    }
-
-    const still=cost(0,0);if(!Number.isFinite(still)||still<.008)return [0,0];
-    let best=still,dx=0,dy=0;
-    for(let oy=-4;oy<=4;oy++)for(let ox=-4;ox<=4;ox++){
-        const s=cost(ox,oy)+.003*Math.hypot(ox,oy);if(s<best){dx=ox;dy=oy;best=s;}
-    }
-    // A quarter tracking cell matters at small zooms, where a whole cell can span a town.
-    for(const step of [.5,.25]){
-        const bx=dx,by=dy;
-        for(const sy of [-step,0,step])for(const sx of [-step,0,step]){
-            const ox=limit(bx+sx,-4.5,4.5),oy=limit(by+sy,-4.5,4.5);
-            const score=cost(ox,oy)+.003*Math.hypot(ox,oy);
-            if(score<best){dx=ox;dy=oy;best=score;}
-        }
-    }
-    return best<still*.8?[dx/n,dy/n]:[0,0];
 }
 function clockSample(row,time) {
     const times=row?.hourly?.time??[],levels=row?.hourly?.snowfall_height??[];
@@ -206,7 +162,7 @@ function engine(emit) {
         grid.rows=grid.nodes.map(n=>modelNodes.get(key(n)));v.model=grid;
     }
     function prepare(options) {
-        view?.ctl.abort(); const ctl=new AbortController();const v={...options,ctl,signal:ctl.signal,tracks:new Map(),samples:new Map()};view=v;
+        view?.ctl.abort(); const ctl=new AbortController();const v={...options,ctl,signal:ctl.signal,samples:new Map()};view=v;
         const scale=world*2**v.z;v.lon=Float64Array.from({length:v.w},(_,i)=>longitude((v.left+(i+.5)*v.cssW/v.w)/scale));v.lat=Float64Array.from({length:v.h},(_,i)=>latitude((v.top+(i+.5)*v.cssH/v.h)/scale));
         v.relief=terrain(v).catch(()=>{if(!v.signal.aborted)emit({type:'terrainError',id:v.id});});
 
@@ -238,7 +194,9 @@ function engine(emit) {
         for(let y=0;y<v.h;y++)for(let x=0;x<v.w;x++){
             const i=y*v.w+x,k=4*i,rate=sampledRate(data,v.coord,i);
             if(rate<0){
-                if((!french||v.coord.index[i]>=0)&&(x+y)%13<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=70;}
+                // Anchor coverage hatching in projected map pixels when the viewport is rebuilt after a pan.
+                const stripe=Math.floor(v.left+(x+.5)*v.cssW/v.w)+Math.floor(v.top+(y+.5)*v.cssH/v.h);
+                if((!french||v.coord.index[i]>=0)&&((stripe%13+13)%13)<2){rgba[k]=96;rgba[k+1]=108;rgba[k+2]=118;rgba[k+3]=70;}
                 continue;
             }
             if(rate===0)continue;
@@ -249,10 +207,9 @@ function engine(emit) {
             }
             colors.paint(rgba,k,rate,snowy);
         }
-        const track=tracking(i=>{const rate=sampledRate(data,v.coord,i);return rate<0?-1:Math.log1p(rate*.025);},v.w,v.h);
         ctx.putImageData(pixels,0,0);
         const phaseReady=!v.snow||(modelAvailable&&levels.some(Number.isFinite)&&v.terrainOK&&known===wet);
-        return {image:bitmap(node),track,phaseReady};
+        return {image:bitmap(node),phaseReady};
     }
     async function europeanTile(url,signal){
         if(euroTiles.has(url))return euroTiles.get(url);
@@ -323,9 +280,8 @@ function engine(emit) {
             if(rate>0)colors.paint(pixels.data,4*i,rate,!!(code&EuropeRadar.snowFlag));
         }
         remember(v.samples,frame.time,sample,16);
-        const track=tracking(i=>{const rate=sampledRate(data,geo.coord,i);return rate<0?-1:Math.log1p(rate*.025);},v.w,v.h);
         ctx.putImageData(pixels,0,0);
-        return {image:bitmap(node),track,phaseReady};
+        return {image:bitmap(node),phaseReady};
     }
     function sample(m,v){
         let rate=null,phase=null;
@@ -352,22 +308,13 @@ function engine(emit) {
         const v=view;if(!v||m.id!==v.id)return;
         if(m.type==='sample'){sample(m,v);return;}
         if(m.type==='frame')try{
-            const {image,track,phaseReady}=await (v.provider==='europe'?europe:observedFrame)(m.frame,v);
+            const {image,phaseReady}=await (v.provider==='europe'?europe:observedFrame)(m.frame,v);
             if(v!==view||v.signal.aborted){image.close?.();return;}
-            const time=m.frame.time,motions=[],maxGap=(v.provider==='europe'?600:300)*1.51;
-            // Tracks can arrive out of order. Compute each adjacent match as its second input arrives.
-            for(const [other,field] of v.tracks){
-                if(time===other||Math.abs(time-other)>maxGap)continue;
-                const earlier=other<time;
-                motions.push({from:earlier?other:time,to:earlier?time:other,
-                    offset:earlier?estimateMotion(field,track):estimateMotion(track,field)});
-            }
-            remember(v.tracks,time,track,32);
-            emit({type:'frame',id:v.id,key:time,image,phaseReady,motions},[image]);
+            emit({type:'frame',id:v.id,key:m.frame.time,image,phaseReady},[image]);
         }catch(e){if(v===view&&!v.signal.aborted)emit({type:'error',id:v.id,key:m.frame.time});}
     }
     return handle;
 }
-root.RadarRender={engine,estimateMotion,clockSample,modelGrid,modelAt,coverageBounds,sampledRate,gridCoordinates,corners,trackingSize};
+root.RadarRender={engine,clockSample,modelGrid,modelAt,coverageBounds,sampledRate,gridCoordinates,corners};
 if(typeof module==='object'&&module.exports)module.exports=root.RadarRender;
 })(globalThis);
