@@ -4,7 +4,7 @@ function number(value) {
     const n = Number(value);
     return Number.isFinite(n) ? n : null;
 }
-const limits = {temp:[-55,55], rain:[0,400], wind:[0,350], gust:[0,400], dir:[0,360], humidity:[0,100], pressure:[850,1100], stationPressure:[450,1100], qnh:[850,1100], snow:[0,1400]};
+const limits = {minTemp:[-55,55], maxTemp:[-55,55], rainDay:[0,1000], windDay:[0,350], gustDay:[0,400], reportTemp:[-55,55], temp:[-55,55], rain:[0,400], wind:[0,350], gust:[0,400], dir:[0,360], humidity:[0,100], pressure:[850,1100], stationPressure:[450,1100], qnh:[850,1100], snow:[0,1400]};
 function measure(values,key,raw,factor=1) {
     const n=number(raw);
     if (n===null) return;
@@ -132,6 +132,9 @@ export function mfTime(raw){
     if(!/^\d{10}$/.test(t))return NaN;
     return Date.parse(t.slice(0,4)+'-'+t.slice(4,6)+'-'+t.slice(6,8)+'T'+t.slice(8,10)+':00:00Z');
 }
+function stationName(raw){
+    return String(raw).replaceAll('_',' ').replace(/- +/g,'-').toLocaleLowerCase('fr').replace(/(^|[ -])\p{L}/gu,x=>x.toLocaleUpperCase('fr')).replace(/\b(Sapc|Sa)$/,s=>s.toUpperCase());
+}
 export function meteoFrance(records,area) {
     const fields={T:['temp',1],RR1:['rain',1],FF:['wind',3.6],FXI:['gust',3.6],DD:['dir',1],U:['humidity',1],PMER:['pressure',1],PSTAT:['stationPressure',1],NEIGETOT:['snow',1]};
     return latest(records.map(o=>{
@@ -141,7 +144,132 @@ export function meteoFrance(records,area) {
             if([2,3].includes(number(o['Q'+col])))continue;
             measure(v,key,o[col],factor);
         }
-        const name=String(o.NOM_USUEL).replaceAll('_',' ').replace(/- +/g,'-').toLocaleLowerCase('fr').replace(/(^|[ -])\p{L}/gu,x=>x.toLocaleUpperCase('fr')).replace(/\b(Sapc|Sa)$/,s=>s.toUpperCase());
+        const name=stationName(o.NOM_USUEL);
         return station('mf-'+o.NUM_POSTE,name,o.LON,o.LAT,o.ALTI,mfTime(o.AAAAMMJJHH),'Météo-France',v,area,true);
     }));
+}
+
+export function creaSites(streams,area) {
+    const sites=[];
+    for(const stream of streams) {
+        const location=stream.Thing?.Locations?.[0],coord=location?.location?.coordinates;
+        if(!/^[^:]+:temperature_200cm$/.test(stream.name)||stream.unitOfMeasurement?.symbol!=='degC'||!coord)continue;
+        const [lon,lat,alt]=coord.map(number),id=stream['@iot.id'],stationId=stream.Thing['@iot.id'];
+        if(!contains(lon,lat,area)||!Number.isSafeInteger(id)||!Number.isSafeInteger(stationId))continue;
+        sites.push({id,stationId,name:location.name,lon,lat,alt});
+    }
+    return sites;
+}
+export function creaReadings(sites,streams,area,start,end) {
+    const byStream=new Map(sites.map(s=>[s.id,s]));
+    return latest(streams.flatMap(stream=>{
+        const site=byStream.get(stream['@iot.id']);
+        if(!site)return [];
+        return (stream.Observations||[]).map(obs=>{
+            const time=Date.parse(obs.phenomenonTime),values={};
+            if(time<start||time>end)return null;
+            measure(values,'temp',obs.result);
+            return station('crea-'+site.stationId,site.name,site.lon,site.lat,site.alt,time,'CREA Mont-Blanc · Phénoclim',values,area);
+        });
+    }));
+}
+export function validDay(day) {
+    if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day))return false;
+    const time=Date.parse(day+'T00:00:00Z');
+    return Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===day;
+}
+export function dailyStations(rows,area,day) {
+    const fields={TN:['minTemp',1],TX:['maxTemp',1],RR:['rainDay',1],FFM:['windDay',3.6],FXI:['gustDay',3.6]};
+    return latest(rows.map(row=>{
+        if(!String(row.NUM_POSTE).startsWith('74')||row.AAAAMMJJ!==day)return null;
+        const values={};
+        for(const [col,[key,factor]] of Object.entries(fields)){
+            if(![2,3].includes(number(row['Q'+col])))measure(values,key,row[col],factor);
+        }
+        const s=station('mf-'+row.NUM_POSTE,stationName(row.NOM_USUEL),row.LON,row.LAT,row.ALTI,Date.parse(day+'T00:00:00Z'),'Météo-France',values,area,true);
+        return s&&{...s,day};
+    }));
+}
+export function mountainReports(rows,area,start,end) {
+    return latest(rows.map(row=>{
+        const id=/^0-250-0-(74\d{6})$/.exec(row.geo_id_wigos)?.[1],time=Date.parse(row.validity_time);
+        if(!id||time<start||time>end)return null;
+        const values={};
+        measure(values,'snow',row.ht_neige,100);
+        const kelvin=number(row.t);
+        if(kelvin!==null)measure(values,'reportTemp',kelvin-273.15);
+        measure(values,'wind',row.ff,3.6);measure(values,'dir',row.dd);measure(values,'humidity',row.u);
+        return station('mf-'+id,stationName(row.name),row.lon,row.lat,row.Altitude,time,'Météo-France · réseau nivo-météorologique',values,area,true);
+    }));
+}
+export function combineDay(summaries,reports) {
+    const result=new Map(summaries.map(s=>[s.id,s]));
+    for(const s of reports){
+        const same=result.get(s.id);
+        result.set(s.id,same?{...same,reportTime:s.time,source:s.source,values:{...same.values,...s.values}}:{...s,reportTime:s.time});
+    }
+    return [...result.values()];
+}
+
+export function frenchLiveSites(registry,area){
+    return registry.stations.filter(s=>/^74\d{6}$/.test(s.Id_station)&&
+        (contains(s.Longitude,s.Latitude,area)||nearDepartmentBorder(s.Longitude,s.Latitude,area)));
+}
+export function frenchLive(site,report,area,now){
+    const id=String(site.Id_station),time=Date.parse(report.timestamps?.validityTime);
+    if(report.location?.inseeId!==id||!recent(time,now))return null;
+    const v={};
+    if(report.temperature?.unit==='°C')measure(v,'temp',report.temperature.air);
+    if(report.humidity?.unit==='%')measure(v,'humidity',report.humidity.relative);
+    if(report.wind?.unit==='km/h'){
+        measure(v,'wind',report.wind.averageSpeed);measure(v,'gust',report.wind.gustInstant10Min);measure(v,'dir',report.wind.directionDegrees);
+    }
+    if(report.pressure?.unit==='hPa'){
+        measure(v,'pressure',report.pressure.seaLevel);measure(v,'stationPressure',report.pressure.station);
+    }
+    if(report.snow?.unit==='m')measure(v,'snow',report.snow.snowDepth,100);
+    // The six-minute rain amount cannot be used as an hourly total.
+    return station('mf-'+id,stationName(site.Nom_usuel),site.Longitude,site.Latitude,site.Altitude,time,'Météo-France · LiveStation',v,area,true);
+}
+export function uniqueAirfield(stations){
+    const mf=stations.find(s=>s.id==='mf-74182001'),metar=stations.find(s=>s.id==='metar-LFLP');
+    if(!mf||!metar)return stations;
+    const main=mf.time>=metar.time?mf:metar;
+    return [...stations.filter(s=>s!==mf&&s!==metar),{...main,id:mf.id,name:'Annecy–Meythet',
+        values:mf.time===metar.time?{...metar.values,...mf.values}:main.values}];
+}
+
+export function hourlyGauge(id,latestReport,series) {
+    const amount=number(latestReport.rain?.amount6Min),anchor=Date.parse(latestReport.timestamps?.referenceTime);
+    if(amount===null||amount<0||latestReport.rain.unit!=='mm'||!Number.isFinite(anchor)||String(series.station)!==String(id)||!series.availableKeys?.includes('rr_per'))return null;
+    const bins=new Array(10).fill(null);
+    for(const row of series.data||[]){
+        const t=Date.parse(row.reference_time),slot=Math.round((anchor-t)/360000);
+        // Publication times may drift a few seconds. Require all 10 separate
+        // intervals and anchor the latest one to the timestamp of the live report.
+        if(!Number.isInteger(slot)||slot<0||slot>9||Math.abs(anchor-t-slot*360000)>60000)continue;
+        const v=number(row.rr_per);
+        if(v===null||v<0||v>100||bins[slot]!==null&&bins[slot]!==v)return null;
+        bins[slot]=v;
+    }
+    if(bins.some(v=>v===null)||Math.abs(bins[0]-amount)>.05)return null;
+    const total=bins.reduce((a,b)=>a+b,0);
+    return total<=400?Math.round(total*10)/10:null;
+}
+
+const pointName=s=>String(s).normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+export function resortDepths(rows,points,area){
+    const unique=new Map();
+    for(const row of rows){
+        if(!validDay(row.day))continue;
+        for(const reading of row.snow||[]){
+            const name=pointName(reading.name),alt=number(reading.altitude),cm=number(reading.cm);
+            const place=points[row.station_id]?.find(([label,expected])=>pointName(label)===name&&alt!==null&&Math.abs(expected-alt)<=25);
+            if(!place||cm===null||cm<0||cm>1000)continue;
+            const [, ,lat,lon]=place,id='ski-'+row.station_id+'-'+name.replaceAll(' ','-');
+            if(!contains(lon,lat,area)||unique.has(id)&&unique.get(id).bulletinDay>=row.day)continue;
+            unique.set(id,{id,name:reading.name,alt,lat,lon,time:null,bulletinDay:row.day,source:'Bulletin du domaine skiable',values:{snow:cm}});
+        }
+    }
+    return [...unique.values()];
 }

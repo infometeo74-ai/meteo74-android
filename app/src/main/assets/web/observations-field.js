@@ -19,8 +19,16 @@ const metrics={
  gust:{label:'Rafales',unit:'km/h',short:'',icon:'wind',radius:19,vertical:500,stops:[0,10,25,45,65,90,120,160],colors:['#d5e8e2','#aadbd5','#63c3b4','#8fba78','#eac466','#e18d50','#b94f73','#72468b'],ticks:[0,25,45,65,90,120,160]},
  humidity:{label:'Humidité',unit:'%',short:'',icon:'drop',radius:22,vertical:750,stops:[0,20,40,60,80,100],colors:['#e4bd7c','#dfcb92','#c1d9af','#8bcab9','#57aaba','#4078a3'],ticks:[0,20,40,60,80,100]},
  pressure:{label:'Pression au niveau de la mer',brief:'Pression',unit:'hPa',short:'',icon:'pressure',radius:16,vertical:0,stops:[970,985,1000,1015,1030,1045],colors:['#8264ae','#7083c0','#73baca','#a6cdb0','#e2ce81','#d69060'],ticks:[970,985,1000,1015,1030,1045]},
- snow:{label:'Neige au sol',unit:'cm',short:'',icon:'mountain',radius:15,vertical:350,stops:[0,2,10,25,50,100,200],colors:['#e5edef','#c4e2ed','#89ccde','#63acd0','#728ac7','#805da7','#673c88'],ticks:[0,10,25,50,100,200]}
+ snow:{label:'Neige au sol',unit:'cm',short:'',icon:'mountain',radius:12,vertical:220,stops:[0,2,10,25,50,100,200],colors:['#e5edef','#c4e2ed','#89ccde','#63acd0','#728ac7','#805da7','#673c88'],ticks:[0,10,25,50,100,200]}
 };
+Object.assign(metrics,{
+ minTemp:{...metrics.temp,label:'Température minimale',brief:'T° mini'},
+ maxTemp:{...metrics.temp,label:'Température maximale',brief:'T° maxi'},
+ rainDay:{...metrics.rain,label:'Précipitations sur 24 h',brief:'Pluie 24 h',stops:[0,1,5,10,20,40,70,120],ticks:[0,5,10,20,40,70,120]},
+ windDay:{...metrics.wind,label:'Vent moyen quotidien',brief:'Vent moyen'},
+ gustDay:{...metrics.gust,label:'Rafale maximale du jour',brief:'Rafale maxi'},
+ reportTemp:{...metrics.temp,label:'Température au relevé de neige',brief:'T° au relevé'}
+});
 for(const m of Object.values(metrics))m.rgb=m.colors.map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
 function rgb(metric,v){
  const {stops,rgb:colors}=metrics[metric];
@@ -34,8 +42,8 @@ function terrain(bytes){
  if(bytes.byteLength!==grid.width*grid.height*2)throw Error('Relief incomplet');
  const view=new DataView(bytes);return Uint16Array.from({length:bytes.byteLength/2},(_,i)=>view.getUint16(i*2,true));
 }
-function interpolate(metric,records,dem){
- const {radius,vertical}=metrics[metric],out=new Float32Array(dem.length).fill(NaN),confidence=new Uint8Array(dem.length);
+function interpolate(metric,records,dem,overrideRadius){
+ const {vertical}=metrics[metric],radius=overrideRadius||metrics[metric].radius,out=new Float32Array(dem.length).fill(NaN),confidence=new Uint8Array(dem.length);
  const sites=records.filter(s=>Number.isFinite(s.values?.[metric])).map(s=>{
   const k=indexAt(s.lon,s.lat);return {lon:s.lon,lat:s.lat,z:Number.isFinite(s.alt)?s.alt:k>=0?dem[k]&32767:null,v:s.values[metric]};
  });
@@ -49,7 +57,7 @@ function interpolate(metric,records,dem){
     const d2=dy2+((lon-s.lon)*77.25)**2;
     if(d2>=limit)continue;
     // A ridge and a valley can be very close on a map. Limit their mutual influence.
-    const dz=vertical&&s.z!==null?Math.max(0,Math.abs(h-s.z)-130)/vertical:0;
+    const dz=vertical&&s.z!==null?Math.max(0,Math.abs(h-s.z)-(metric==='snow'?40:130))/vertical:0;
     const distance=Math.sqrt(d2/limit+dz*dz);
     if(distance>=1)continue;
     const w=(1-distance)**2/(.8+d2+(dz*radius)**2);
@@ -60,6 +68,91 @@ function interpolate(metric,records,dem){
  }
  return {values:out,confidence};
 }
+function modelSurface(metric,frame,dem){
+ const data=frame?.values?.[metric],elev=metric==='snow'?frame?.snowElevation:frame?.elevation;
+ if(!data||data.length!==frame.nx*frame.ny||elev?.length!==data.length||!data.some(Number.isFinite))return null;
+ const {nx,ny,west,east,south,north}=frame;
+ const slopes=new Float32Array(data.length);
+ if(metric==='temp'){
+  for(let i=0;i<data.length;i++){
+   const cx=i%nx,cy=Math.floor(i/nx);let n=0,z=0,t=0,zz=0,zt=0;
+   for(let y=Math.max(0,cy-1);y<=Math.min(ny-1,cy+1);y++)for(let x=Math.max(0,cx-1);x<=Math.min(nx-1,cx+1);x++){
+    const k=y*nx+x,h=elev[k],v=data[k];if(!Number.isFinite(h)||!Number.isFinite(v))continue;
+    n++;z+=h;t+=v;zz+=h*h;zt+=h*v;
+   }
+   // Shrink poorly constrained local gradients towards a moderate lapse rate.
+   const prior=60000;
+   slopes[i]=Math.max(-.009,Math.min(.006,(zt-z*t/Math.max(1,n)-.005*prior)/(Math.max(0,zz-z*z/Math.max(1,n))+prior)));
+  }
+ }
+ function at(lon,lat,height){
+  const gx=(lon-west)*(nx-1)/(east-west),gy=(lat-south)*(ny-1)/(north-south);
+  if(gx<0||gy<0||gx>nx-1||gy>ny-1)return NaN;
+  const x=Math.min(nx-2,Math.floor(gx)),y=Math.min(ny-2,Math.floor(gy)),dx=gx-x,dy=gy-y;
+  let sum=0,total=0;
+  if(metric==='snow'){
+   // Use terrain bands as well as distance. A snowy summit and a valley can share a cell.
+   for(let sy=Math.max(0,y-1);sy<=Math.min(ny-1,y+2);sy++)for(let sx=Math.max(0,x-1);sx<=Math.min(nx-1,x+2);sx++){
+    const k=sy*nx+sx;if(!Number.isFinite(data[k])||!Number.isFinite(elev[k]))continue;
+    const dz=Math.abs(height-elev[k])/230,d2=(gx-sx)**2+(gy-sy)**2;
+    const w=1/((.12+d2)**1.35*(1+dz*dz)**2);
+    sum+=w*data[k];total+=w;
+   }
+   return total?sum/total:NaN;
+  }
+  for(let j=0;j<2;j++)for(let i=0;i<2;i++){
+   const k=(y+j)*nx+x+i,w=(i?dx:1-dx)*(j?dy:1-dy);
+   if(!Number.isFinite(data[k])||w<=0)continue;
+   const adjust=metric==='temp'&&Number.isFinite(height)&&Number.isFinite(elev[k])?Math.max(-10,Math.min(10,(height-elev[k])*slopes[k])):0;
+   sum+=w*(data[k]+adjust);total+=w;
+  }
+  return total?sum/total:NaN;
+ }
+ const values=new Float32Array(dem.length).fill(NaN);
+ for(let y=0;y<grid.height;y++)for(let x=0;x<grid.width;x++){
+  const k=y*grid.width+x;if(dem[k]&32768)values[k]=at(cols[x],rows[y],dem[k]&32767);
+ }
+ return {values,at};
+}
+function analyze(metric,dem,stations,frame,accumulation){
+ const model=modelSurface(metric,frame,dem),radar=metric==='rain'?accumulation:null;
+ if(!model&&!radar){
+  const field=interpolate(metric,stations,dem);
+  return {...field,used:stations.length,resorts:stations.filter(s=>s.bulletinDay).length,model:false,radar:false};
+ }
+ const base=model?model.values.slice():new Float32Array(dem.length).fill(NaN);
+ if(radar)for(let i=0;i<base.length;i++)if((dem[i]&32768)&&Number.isFinite(radar.values[i]))base[i]=radar.values[i];
+ const residuals=[];
+ for(const s of stations){
+  const k=indexAt(s.lon,s.lat);
+  if(k<0||!Number.isFinite(s.values[metric]))continue;
+  const radarHere=radar&&Number.isFinite(radar.values[k]);
+  if(!radarHere&&!model)continue;
+  let dt=Math.abs(s.time-(radarHere?radar.time:frame.time))/60000;
+  if(metric==='snow'&&s.bulletinDay){
+   const mapDay=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(frame.time);
+   const days=(Date.parse(mapDay)-Date.parse(s.bulletinDay))/86400000;
+   if(days<0||days>1)continue;
+   dt=days*1440;
+  }
+  const window=metric==='snow'?2160:radarHere?20:metric==='rain'?40:90;
+  if(dt>window)continue;
+  const z=Number.isFinite(s.alt)?s.alt:dem[k]&32767;
+  const reference=radarHere?radar.values[k]:model?.at(s.lon,s.lat,z);
+  if(!Number.isFinite(reference))continue;
+  const delta=(s.values[metric]-reference)*(1-.35*dt/window);
+  residuals.push({...s,values:{[metric]:delta}});
+ }
+ if(residuals.length){
+  const corrections=interpolate(metric,residuals,dem,radar?9:undefined);
+  for(let i=0;i<base.length;i++)if(Number.isFinite(base[i])&&Number.isFinite(corrections.values[i])){
+   let v=base[i]+corrections.values[i]*corrections.confidence[i]/206;
+   if(['snow','rain','wind','gust','humidity'].includes(metric))v=Math.max(0,v);
+   base[i]=metric==='humidity'?Math.min(100,v):v;
+  }
+ }
+ return {values:base,confidence:null,used:residuals.length,resorts:residuals.filter(s=>s.bulletinDay).length,model:!!model,radar:!!radar};
+}
 function sampleRain(frame,read,dem){
  const values=new Float32Array(dem.length).fill(NaN);
  for(let y=0;y<grid.height;y++)for(let x=0;x<grid.width;x++){
@@ -68,5 +161,5 @@ function sampleRain(frame,read,dem){
  }
  return values;
 }
-return {grid,metrics,cols,rows,indexAt,rgb,terrain,interpolate,sampleRain};
+return {grid,metrics,cols,rows,indexAt,rgb,terrain,interpolate,sampleRain,analyze};
 });

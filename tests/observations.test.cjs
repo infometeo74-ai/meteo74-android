@@ -68,3 +68,79 @@ test('The Swiss one-hour accumulation uses its own STAC product and ODIM no-dete
  const frame=R.decode(null,{File},projection,'CPC');assert.deepEqual([...frame.values],[NaN,0,0,.25]);
  assert.throws(()=>R.decode(null,{File},projection));
 });
+
+test('Phénoclim uses the outdoor two-metre stream, real time and department polygon',async()=>{
+ const {creaSites,creaReadings}=await import(path.join(server,'normalize.mjs'));
+ const stream={'@iot.id':178,name:'234:temperature_200cm',unitOfMeasurement:{symbol:'degC'},Thing:{'@iot.id':30,Locations:[{name:'Montroc',location:{coordinates:['6.92','46.01','1360']}}]}};
+ const wrong={...stream,name:'234:temperature_30cm'};
+ const abroad={...stream,Thing:{...stream.Thing,Locations:[{location:{coordinates:[6.14,46.21,400]}}]}};
+ const sites=creaSites([stream,wrong,abroad],area);assert.equal(sites.length,1);
+ const obs=time=>({phenomenonTime:new Date(time).toISOString(),result:0});
+ const [out]=creaReadings(sites,[{'@iot.id':178,Observations:[obs(now),obs(now-900000),obs(now+900000)]}],area,now,now);
+ assert.deepEqual([out.id,out.name,out.time,out.values],['crea-30','Montroc',now,{temp:0}]);
+});
+test('Dated totals and mountain reports preserve units, quality flags, dates and identifiers',async()=>{
+ const {validDay,dailyStations,mountainReports,combineDay}=await import(path.join(server,'normalize.mjs'));
+ assert.ok(validDay('2024-02-29'));for(const day of ['2026-02-29','2026-13-01','20261125',''])assert.equal(validDay(day),false);
+ const day='2026-11-25',row={NUM_POSTE:74056417,AAAAMMJJ:day,NOM_USUEL:'LA FLEGERE',LAT:45.9625,LON:6.889167,ALTI:1850,TN:-3,TX:4,RR:0,FFM:2,FXI:90,QFXI:2};
+ const daily=dailyStations([row,{...row,AAAAMMJJ:'2026-11-24'}],area,day);
+ assert.deepEqual(daily[0].values,{minTemp:-3,maxTemp:4,rainDay:0,windDay:7.2});
+ const r={geo_id_wigos:'0-250-0-74056417',validity_time:new Date(now).toISOString(),name:'LA FLEGERE',lat:row.LAT,lon:row.LON,Altitude:row.ALTI,ht_neige:1.23,t:271.15,ff:0,dd:null,u:72};
+ const reports=mountainReports([r,{...r,t:274,validity_time:new Date(now-3600000).toISOString()},{...r,geo_id_wigos:'0-250-0-73000001'}],area,now-86400000,now);
+ assert.deepEqual(reports[0].values,{snow:123,reportTemp:-2,wind:0,humidity:72});
+ const all=combineDay(daily,reports);assert.equal(all.length,1);assert.equal(all[0].reportTime,now);
+ assert.equal(all[0].values.rainDay,0);assert.equal(all[0].values.snow,123);
+});
+
+test('Live Météo-France values use validity time and six-minute rain is never treated as an hour',async()=>{
+ const {frenchLive,uniqueAirfield}=await import(path.join(server,'normalize.mjs'));
+ const site={Id_station:74182001,Nom_usuel:'MEYTHET',Longitude:6.09,Latitude:45.93,Altitude:455};
+ const report={location:{inseeId:'74182001'},timestamps:{validityTime:new Date(now).toISOString()},temperature:{air:0,unit:'°C'},rain:{amount6Min:4,unit:'mm'},wind:{averageSpeed:2,directionDegrees:0,gustInstant10Min:7,unit:'km/h'}};
+ const mf=frenchLive(site,report,area,now);assert.deepEqual(mf.values,{temp:0,wind:2,gust:7,dir:0});
+ assert.equal(frenchLive(site,report,area,now+100*60000),null);
+ const records=uniqueAirfield([mf,{...mf,id:'metar-LFLP',values:{temp:1,qnh:1002}}]);
+ assert.equal(records.length,1);assert.equal(records[0].values.temp,0);assert.equal(records[0].values.qnh,1002);
+});
+test('A continuous model is locally corrected by real measurements, with zero rain and masked borders',()=>{
+ const frame={nx:2,ny:2,west:5.7,east:7.2,south:45.6,north:46.5,time:now,elevation:[500,500,500,500],values:{temp:[0,0,0,0],wind:[10,10,10,10],rain:[0,0,0,0]}};
+ const at=F.indexAt(place.lon,place.lat),far=F.indexAt(6.86,45.92);
+ const record={...place,time:now,alt:terrain[at]&32767,values:{wind:30,rain:8}};
+ const raw=F.analyze('wind',terrain,[],frame,null),blend=F.analyze('wind',terrain,[record],frame,null);
+ assert.equal(blend.used,1);assert.equal(blend.values.filter(Number.isFinite).length,Array.from(terrain).filter(n=>n&32768).length);
+ assert.ok(blend.values[at]>29);assert.equal(blend.values[far],10);assert.equal(raw.values[at],10);assert.ok(Number.isNaN(blend.values[0]));
+ const radar={time:now,values:new Float32Array(terrain.length).fill(0)};radar.values[far]=NaN;
+ const rain=F.analyze('rain',terrain,[record],frame,radar);
+ assert.ok(rain.values[at]>7);assert.equal(rain.values[far],0);
+ const old=F.analyze('rain',terrain,[{...record,time:now-31*60000}],frame,radar);
+ assert.equal(old.used,0);assert.equal(old.values[at],0);
+ const onlyRadar=F.analyze('rain',terrain,[{...record,lon:6.86,lat:45.92}],null,radar);
+ assert.equal(onlyRadar.used,0);
+});
+
+test('Gauge corrections require ten actual consecutive six-minute totals anchored to the live report',async()=>{
+ const {hourlyGauge}=await import(path.join(server,'normalize.mjs'));
+ const report={rain:{amount6Min:.2,unit:'mm'},timestamps:{referenceTime:new Date(now).toISOString()}};
+ const data=Array.from({length:10},(_,k)=>({reference_time:new Date(now-k*360000+(k%3)*1000).toISOString(),rr_per:.2}));
+ const series={station:741,availableKeys:['rr_per'],data};
+ assert.equal(hourlyGauge(741,report,series),2);assert.equal(hourlyGauge(742,report,series),null);
+ assert.equal(hourlyGauge(741,report,{...series,data:data.slice(1)}),null);
+ assert.equal(hourlyGauge(741,report,{...series,data:[...data,{...data[4],rr_per:9}]}),null);
+ assert.equal(hourlyGauge(741,{...report,rain:{...report.rain,amount6Min:2}},series),null);
+});
+
+test('Ski bulletins use the named observation level, retain a dated zero, and ignore heights without a matching site',async()=>{
+ const {resortDepths}=await import(path.join(server,'normalize.mjs')),points=require(path.join(server,'ski-points.json'));
+ const snow=[{name:'FORUM',altitude:1600,cm:0},{name:'GRANDES PLATIERES',altitude:2500,cm:250},{name:'FORUM',altitude:2500,cm:80},{name:'Bas des pistes',cm:100}];
+ const data=resortDepths([{station_id:'flaine',day:'2026-11-25',snow},{station_id:'flaine',day:'2026-11-26',snow}],points,area);
+ assert.deepEqual(data.map(p=>[p.alt,p.values.snow,p.bulletinDay,p.time]),[[1600,0,'2026-11-26',null],[2500,250,'2026-11-26',null]]);
+ assert.notEqual(data[0].lat,data[1].lat);
+});
+test('Snow depth observations correct the same terrain band without depositing summit snow in the valley',()=>{
+ const k=F.indexAt(6.695,46.005),lat=F.rows[Math.floor(k/F.grid.width)],lon=F.cols[k%F.grid.width],dem=terrain.slice();
+ dem[k]=32768+1600;dem[k+1]=32768+2500;
+ const frame={nx:2,ny:2,west:5.7,east:7.2,south:45.6,north:46.5,time:now,snowElevation:[500,500,500,500],values:{snow:[0,0,0,0]}};
+ const summit={lat,lon,alt:2500,time:null,bulletinDay:'2026-11-25',values:{snow:200}};
+ const a=F.analyze('snow',dem,[summit],frame,null);
+ assert.equal(a.used,1);assert.equal(a.resorts,1);assert.equal(a.values[k],0);assert.ok(a.values[k+1]>195);
+ assert.equal(F.analyze('snow',dem,[{...summit,bulletinDay:'2026-11-22'}],frame,null).used,0);
+});

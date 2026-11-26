@@ -1,3 +1,13 @@
+# Météo74 0.6.1
+
+26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 13. Son APK signé contient 4 713 325 octets. SHA-256 `726ffecbff86b863f7e2c208ca5d94eb623547ecd8f0b987ce7fbf5b24c37072`. Son certificat correspond à celui de la 0.6.0. L’alignement ZIP et les 92 fichiers de l’interface embarquée ont été vérifiés. Les 50 tests passent. Android Lint signale cinq avertissements et zéro erreur.
+
+À 8 h 30, heure de Paris, le service en production renvoyait 65 stations météo distinctes en direct et 21 lieux de mesure pour la neige au sol. Parmi ces derniers, sept relevés provenaient des bulletins déjà enregistrés pour les fiches de ski. À Flaine, la fiche et la carte ont fourni 23 cm au Forum à 1 600 m et 250 cm aux Grandes Platières à 2 500 m. Les tests vérifient le filtrage par altitude, le dédoublonnage des points, les données expirées et le traitement d’une hauteur nulle. La carte lit les hauteurs archivées en base. La synchronisation des bulletins est planifiée toutes les heures.
+
+Les sept couches de la grille de modèle ont renvoyé 132 valeurs chacune. L’interface extraite de l’APK a rendu les sept surfaces en couleurs sur 20 162 cellules à l’intérieur du département, avec un extérieur transparent. Lors de cet essai, 62 stations ajustaient la température et 20 pluviomètres la pluie sur une heure. Les essais dans Chromium en émulation mobile ont couvert les largeurs de 320, 393 et 600 pixels, la lecture par appui, les archives du 3 avril, la vue horaire et le changement de couche hors connexion après chargement.
+
+Le manifeste diffusé par les paramètres annonce la version 0.6.1. Les téléchargements depuis l’application et depuis le dépôt public correspondent octet pour octet à l’APK signé. Les réponses HTTP 206 pour une reprise et 416 pour un intervalle hors fichier ont été vérifiées. Le service public de distribution accepte uniquement la lecture.
+
 # Météo74 0.6.0
 
 26 novembre 2026. Le paquet Android `fr.meteo74.android` porte le numéro 12. L’APK signé contient 4 711 533 octets. SHA-256 `6718a6521b559995888282450e9cf4135603318b8dd4593cb0306fc58dc4572b`. Son certificat correspond à celui de la 0.5.1. Les 92 fichiers de l’interface embarquée correspondent aux sources. L’alignement ZIP est validé.

@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.6.0 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.6.1 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.6.0 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.6.0.apk)
+[Télécharger Météo74 0.6.1 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.6.1.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -16,19 +16,23 @@ Les villes, la position suivie et les stations de ski apparaissent dans une list
 
 **Ma position** figure également dans le sélecteur. Elle occupe une seule tuile. La localisation démarre sur demande, suit les déplacements pendant l’utilisation et reprend au retour dans l’application. Les communes précédemment enregistrées restent disponibles après la mise à jour. La source Open-Meteo est indiquée une fois pour la liste.
 
-## Carte des observations
+## Cartes météo
 
-Dans **Carte**, sélectionner la température, les précipitations sur une heure, le vent moyen, les rafales, l’humidité ou la pression ramenée au niveau de la mer. Le dernier relevé horaire propose aussi la neige au sol. Toucher une valeur ouvre la fiche de la station avec son altitude, son réseau et l’heure locale. Toucher la surface colorée donne l’estimation à cet endroit. [Aperçu sur téléphone](artwork/carte-observations.png)
+Dans **Carte → Maintenant**, choisir la température, la pluie sur une heure, le vent moyen, les rafales, l’humidité, la pression ou la hauteur de neige au sol. Les couleurs couvrent la Haute-Savoie. Toucher un endroit affiche la valeur locale estimée. Le modèle Météo-France fourni par Open-Meteo est échantillonné en 132 points, puis interpolé sur le relief embarqué. Des gradients locaux corrigent l’effet de l’altitude sur la température. Les écarts entre les mesures et le modèle ajustent automatiquement la surface à proximité des stations, avec une influence qui diminue selon la distance, l’écart d’altitude et le décalage horaire.
 
-Les mesures de moins de 90 minutes proviennent des balises FFVL, des capteurs extérieurs Sensor.Community et des bulletins METAR. Le cumul récent de MétéoSuisse provient du produit CombiPrecip sur 60 minutes. La fonction `meteo74-observations` renvoie séparément le dernier relevé horaire du fichier départemental de Météo-France, publié quotidiennement. Le téléphone conserve la dernière consultation de chaque mode et indique les interruptions de réseau.
+Les observations récentes des stations de Météo-France diffusées par LiveStation, des réseaux FFVL, Sensor.Community, METAR et des thermomètres à 2 m de Phénoclim alimentent le calcul. Le radar et les pluviomètres de MétéoSuisse donnent le cumul sur une heure, complété par la grille si nécessaire. Les pluviomètres de Haute-Savoie ajustent ce cumul lorsque dix mesures consécutives de six minutes sont disponibles. La carte indique son heure de validité, ses sources et le nombre de stations utilisées. Les services récupèrent une seule grille partagée pour les variables du département et la conservent sur trois heures. [Modèle Météo-France via Open-Meteo](https://open-meteo.com/en/docs/meteofrance-api) · [Phénoclim](https://spot.creamontblanc.org/programmes/phenoclim)
 
-Les limites départementales, les noms de communes et le relief sont embarqués. Le champ estimé perd de l’opacité avec la distance, et avec l’écart d’altitude pour les mesures sensibles au relief. Les coordonnées des stations Infoclimat figurent dans une option du répertoire. Les valeurs de ces stations nécessitent un accès API et le respect des licences propres à chaque station. Sources et conditions figurent en bas de la carte.
+**Neige au sol** associe le modèle de hauteur de neige Open-Meteo, les observations nivo-météorologiques et les hauteurs déjà enregistrées pour les fiches des domaines. Les bulletins sont actualisés de façon centralisée une fois par heure et conservés par date. La carte lit ces valeurs en base. Chaque point de domaine doit avoir un nom localisable et une altitude publiée. Pour cette couche, une mesure ne corrige pas un terrain éloigné de plus de 260 m en altitude. Toucher la carte affiche la hauteur estimée, l’altitude locale approximative et, lorsqu’il existe, un relevé proche du même étage. [Exemple de bulletin par altitude à Flaine](https://bulletin.lumiplan.pro/displayAll.php?lang=fr&pays=france&region=alpes&station=flaine)
+
+**Relevé horaire** utilise les stations du dernier fichier départemental de Météo-France et les thermomètres Phénoclim à la même heure. **Par date** réunit les postes automatiques, les postes climatologiques manuels et le réseau nivo-météorologique. Le calendrier couvre l’année précédente et l’année en cours. Les couches distinguent minima, maxima, pluie sur 24 h, vent moyen, rafale maximale et relevés de neige. Certains postes transmettent en fin de mois. La carte des archives s’atténue lorsque les mesures sont trop éloignées. [Bilans Météo-France](https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-quotidiennes) · [Réseau nivo-météorologique](https://www.data.gouv.fr/datasets/archive-reseau-nivo-meteorologique)
+
+[Carte des températures](artwork/carte-observations.png) · [Carte de la neige au sol](artwork/carte-neige-au-sol.png)
 
 ### Stations WeatherLink
 
 Le service de la carte accepte les observations de l’API officielle WeatherLink v2. Pour raccorder des stations, utiliser un compte dédié à Météo74 et y faire partager les stations destinées à la carte. Dans le compte WeatherLink, **Generate v2 Key** fournit les deux valeurs à enregistrer dans les secrets du service Météo74, `WEATHERLINK_API_KEY` et `WEATHERLINK_API_SECRET`. Le compte peut limiter la sélection avec `WEATHERLINK_STATION_IDS`, une liste facultative d’identifiants numériques séparés par des virgules. [Compte WeatherLink](https://www.weatherlink.com/account) · [Droits de partage Davis](https://weatherlink.github.io/v2-api/data-permissions)
 
-Le service sélectionne les stations publiques actives situées en Haute-Savoie. Il utilise l’heure du capteur, le vent moyen et les rafales sur dix minutes, et le cumul glissant sur une heure lorsque l’appareil le fournit. Les températures extérieures, l’humidité et la pression dont la référence est précisée sont envoyées en unités métriques. Le partage Basic donne accès aux conditions courantes par pas de quinze minutes. Le nom du réseau figure dans la fiche de station de Météo74 0.6.0.
+Le service sélectionne les stations publiques actives situées en Haute-Savoie. Il utilise l’heure du capteur, le vent moyen et les rafales sur dix minutes, et le cumul glissant sur une heure lorsque l’appareil le fournit. Les températures extérieures, l’humidité et la pression dont la référence est précisée sont envoyées en unités métriques. Le partage Basic donne accès aux conditions courantes par pas de quinze minutes. Les observations reçues contribuent aux couleurs de la carte.
 
 ## Neige et stations
 

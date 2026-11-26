@@ -1,9 +1,9 @@
 {
   "packageName": "fr.meteo74.android",
-  "versionCode": 12,
-  "versionName": "0.6.0",
-  "file": "Meteo74-0.6.0.apk",
-  "size": 4711533,
-  "sha256": "6718a6521b559995888282450e9cf4135603318b8dd4593cb0306fc58dc4572b",
-  "notes": "Nouvel onglet Carte en Haute-Savoie. Température, précipitations sur 1 h, vent, rafales, humidité, pression et neige au sol. Touchez une station pour lire ses mesures et leur heure."
+  "versionCode": 13,
+  "versionName": "0.6.1",
+  "file": "Meteo74-0.6.1.apk",
+  "size": 4713325,
+  "sha256": "726ffecbff86b863f7e2c208ca5d94eb623547ecd8f0b987ce7fbf5b24c37072",
+  "notes": "Cartes en couleurs sur toute la Haute-Savoie, ajustées par les stations. Neige au sol calculée avec les bulletins des domaines et l’altitude réelle des relevés. Nouveau calendrier des observations."
 }
