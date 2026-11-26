@@ -24,6 +24,12 @@ Les mesures de moins de 90 minutes proviennent des balises FFVL, des capteurs ex
 
 Les limites départementales, les noms de communes et le relief sont embarqués. Le champ estimé perd de l’opacité avec la distance, et avec l’écart d’altitude pour les mesures sensibles au relief. Les coordonnées des stations Infoclimat figurent dans une option du répertoire. Les valeurs de ces stations nécessitent un accès API et le respect des licences propres à chaque station. Sources et conditions figurent en bas de la carte.
 
+### Stations WeatherLink
+
+Le service de la carte accepte les observations de l’API officielle WeatherLink v2. Pour raccorder des stations, utiliser un compte dédié à Météo74 et y faire partager les stations destinées à la carte. Dans le compte WeatherLink, **Generate v2 Key** fournit les deux valeurs à enregistrer dans les secrets du service Météo74, `WEATHERLINK_API_KEY` et `WEATHERLINK_API_SECRET`. Le compte peut limiter la sélection avec `WEATHERLINK_STATION_IDS`, une liste facultative d’identifiants numériques séparés par des virgules. [Compte WeatherLink](https://www.weatherlink.com/account) · [Droits de partage Davis](https://weatherlink.github.io/v2-api/data-permissions)
+
+Le service sélectionne les stations publiques actives situées en Haute-Savoie. Il utilise l’heure du capteur, le vent moyen et les rafales sur dix minutes, et le cumul glissant sur une heure lorsque l’appareil le fournit. Les températures extérieures, l’humidité et la pression dont la référence est précisée sont envoyées en unités métriques. Le partage Basic donne accès aux conditions courantes par pas de quinze minutes. Le nom du réseau figure dans la fiche de station de Météo74 0.6.0.
+
 ## Neige et stations
 
 L’onglet **Neige** réunit 40 stations et accès de ski alpin et 22 sites de ski de fond en Haute-Savoie. Les six secteurs géographiques se déplient et la recherche accepte aussi le nom d’un domaine ou d’un secteur. Cet onglet fonctionne dès le premier lancement, même quand aucune commune n’a encore été choisie.

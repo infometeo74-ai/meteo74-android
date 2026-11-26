@@ -80,6 +80,53 @@ export function aviation(records,area,now) {
         return station('metar-'+o.icaoId,o.icaoId==='LFLP'?'Annecy–Meythet':o.icaoId,o.lon,o.lat,o.elev,t,'METAR',v,area);
     }));
 }
+// WeatherLink v2 reports Fahrenheit, mph and inHg, regardless of display preferences.
+export function weatherlinkSites(registry,area) {
+    if(!Array.isArray(registry?.stations))throw Error('Liste WeatherLink indisponible');
+    return registry.stations.filter(s=>s.active===true && s.private===false &&
+        Number.isSafeInteger(s.station_id) && s.station_id>0 && contains(s.longitude,s.latitude,area))
+        .map(s=>({id:s.station_id,name:String(s.station_name||s.city||'Station WeatherLink'),lon:number(s.longitude),lat:number(s.latitude)}));
+}
+function davisValues(type,row) {
+    const v={};
+    if(type===12||type===19){
+        measure(v,'pressure',row.bar_sea_level,33.8638867);
+        measure(v,'stationPressure',row.bar_absolute,33.8638867);
+        return v;
+    }
+    const modern=type===10||type===23;
+    if(!modern&&![1,2,6].includes(type))return v;
+    const f=number(modern?row.temp:row.temp_out);
+    if(f!==null)measure(v,'temp',(f-32)*5/9);
+    measure(v,'humidity',modern?row.hum:row.hum_out);
+    const avg=modern?row.wind_speed_avg_last_10_min:type===6?row.wind_speed_10_min:row.wind_speed_10_min_avg;
+    measure(v,'wind',avg,1.609344);
+    measure(v,'gust',modern?row.wind_speed_hi_last_10_min:row.wind_gust_10_min,1.609344);
+    measure(v,'dir',modern?row.wind_dir_scalar_avg_last_10_min:row.wind_dir);
+    // Older IP loggers expose rain rate and daily total but no rolling one-hour total.
+    if(modern||type===6)measure(v,'rain',modern?row.rainfall_last_60_min_mm:row.rain_60_min_mm);
+    if(type===6)measure(v,'stationPressure',row.bar_absolute,33.8638867);
+    return v;
+}
+export function weatherlink(site,payload,area,now) {
+    if(payload?.station_id!==site.id||!Array.isArray(payload.sensors))return null;
+    const outdoor=[],barometers=[];
+    for(const sensor of payload.sensors){
+        const type=Number(sensor.data_structure_type),barometer=type===12||type===19;
+        for(const row of sensor.data||[]){
+            const t=number(row.ts)*1000;
+            if(!recent(t,now))continue;
+            const values=davisValues(type,row);
+            if(Object.keys(values).length)(barometer?barometers:outdoor).push({t,values,lsid:sensor.lsid});
+        }
+    }
+    const order=(a,b)=>b.t-a.t||Object.keys(b.values).length-Object.keys(a.values).length||a.lsid-b.lsid;
+    const main=outdoor.sort(order)[0],bar=barometers.sort(order)[0],sample=main||bar;
+    if(!sample)return null;
+    // All values in the public station card belong to the displayed timestamp.
+    const pressure=main&&bar?.t===main.t?bar.values:{};
+    return station('wl-'+site.id,site.name,site.lon,site.lat,null,sample.t,'WeatherLink',{...sample.values,...pressure},area);
+}
 export function mfTime(raw){
     const t=String(raw);
     if(!/^\d{10}$/.test(t))return NaN;

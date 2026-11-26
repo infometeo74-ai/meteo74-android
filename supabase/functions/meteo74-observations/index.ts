@@ -1,6 +1,13 @@
 import territory from "./territory.json" with { type: "json" };
 import { ffvl, sensors, aviation, meteoFrance } from "./normalize.mjs";
 
+import { sharedWeatherLink } from "./weatherlink.mjs";
+
+const davisKey=Deno.env.get("WEATHERLINK_API_KEY");
+const davisSecret=Deno.env.get("WEATHERLINK_API_SECRET");
+const davisIds=Deno.env.get("WEATHERLINK_STATION_IDS");
+const davisHistory=new Map();
+
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"GET, OPTIONS"};
 const author={"Accept":"application/json","User-Agent":"Meteo74/0.6 (Haute-Savoie observations)"};
 const resource="https://www.data.gouv.fr/api/1/datasets/r/";
@@ -26,7 +33,12 @@ const feeds=[
     ["METAR",async()=>aviation(await json("https://aviationweather.gov/api/data/metar?format=json&bbox=45.65,5.78,46.44,7.06&hours=2"),territory,Date.now())]
 ] as const;
 async function live(){
-    const results=await Promise.allSettled(feeds.map(([name,load])=>memo(name,150000,load)));
+    const [results,davis]=await Promise.all([
+        Promise.allSettled(feeds.map(([name,load])=>memo(name,150000,load))),
+        davisKey&&davisSecret?memo("davis-observations",900000,()=>sharedWeatherLink({
+            key:davisKey,secret:davisSecret,ids:davisIds,area:territory,history:davisHistory,signal:AbortSignal.timeout(27500)
+        })).catch(()=>({stations:[],partial:true})):null
+    ]);
     const stations:any[]=[], missing:string[]=[];
     for(const [i,r] of results.entries()){
         if(r.status==="fulfilled"){stations.push(...r.value);continue;}
@@ -34,7 +46,11 @@ async function live(){
         // Keep a network's previously received measurements only while they remain recent.
         stations.push(...(cache.get(name)?.value||[]).filter((s:any)=>s.time>=Date.now()-90*60000));
     }
-    if(missing.length===feeds.length&&!stations.length)throw Error("Aucun réseau disponible");
+    if(davis){
+        stations.push(...davis.stations);
+        if(davis.partial)missing.push("WeatherLink");
+    }
+    if(results.every(r=>r.status==="rejected")&&!stations.length)throw Error("Aucun réseau disponible");
     return {mode:"live",retrievedAt:Date.now(),stations,missing};
 }
 async function latestResource(){
