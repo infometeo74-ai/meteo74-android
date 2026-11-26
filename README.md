@@ -1,10 +1,10 @@
 # Météo74 pour Android
 
-Version 0.7.3 · 26 novembre 2026 · `fr.meteo74.android`
+Version 0.7.4 · 26 novembre 2026 · `fr.meteo74.android`
 
 ## Installation et mises à jour
 
-[Télécharger Météo74 0.7.3 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.3.apk)
+[Télécharger Météo74 0.7.4 pour Android](https://raw.githubusercontent.com/infometeo74-ai/meteo74-android/telechargements/Meteo74-0.7.4.apk)
 
 Pour une première installation sur Android 7 ou plus récent, ouvre le lien depuis le téléphone, puis ouvre le fichier APK téléchargé et confirme l’installation. Si tu utilises Météo74 0.3.3 ou une version antérieure, installe cet APK par-dessus l’application pour conserver tes favoris.
 
@@ -20,7 +20,7 @@ Les pictogrammes des villes et des stations tiennent compte de la nébulosité. 
 
 ## Cartes météo
 
-Sur les radars, les cartes d’observations et la carte des stations de ski, les noms des villes se superposent aux données météo. Un point indique leur emplacement. Les petites communes apparaissent au zoom et les libellés proches se répartissent selon la place disponible. Les noms sont embarqués dans l’application.
+Sur les radars, les cartes d’observations et la carte des stations de ski, les noms des villes se superposent aux données météo. Un point indique leur emplacement. Le fond dessine les routes, les lacs et les frontières sans texte. Les noms des communes sont espacés selon la taille de la carte. Les villes principales sont prioritaires et les villages apparaissent en zoomant. Les noms sont embarqués dans l’application.
 
 Le fond vectoriel provient d’[OpenStreetMap](https://www.openstreetmap.org/copyright). Les communes françaises sont géolocalisées en priorité à leur mairie avec l’[API Découpage administratif](https://geo.api.gouv.fr/). Les autres localités proviennent de [GeoNames](https://www.geonames.org/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), avec les noms français de [Natural Earth](https://www.naturalearthdata.com/) lorsqu’ils sont disponibles. Le script `artwork/prepare-map-places.py` reconstruit l’index des noms.
 

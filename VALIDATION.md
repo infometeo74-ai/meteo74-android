@@ -1,3 +1,21 @@
+# Météo74 0.7.4
+
+26 novembre 2026. APK Android signé de `fr.meteo74.android`, version 18. Taille de 9 256 883 octets, SHA-256 `9ba1dd677e5634c20e8dbabbe83064317b5733e2302fc1b0f58797c6176decfe`. Le certificat correspond à celui de la 0.7.3. L’alignement et toutes les ressources embarquées ont été vérifiés. Les 56 tests passent. Android Lint signale six avertissements et zéro erreur.
+
+Comparaison des deux APK en émulation mobile, à position et zoom identiques sur un écran de 393 pixels CSS de large. Les valeurs indiquent le nombre de noms de communes affichés.
+
+| Vue | 0.7.3 | 0.7.4 |
+| --- | ---: | ---: |
+| Carte départementale | 18 | 13 |
+| Radar Suisse et Alpes | 16 | 10 |
+| Radar France | 17 | 12 |
+| Radar Europe | 14 | 9 |
+| Carte du Genevois | 22 | 14 |
+
+Le fond vectoriel de la 0.7.4 utilise exclusivement les couches de géométrie. Les contrôles en situation ont enregistré zéro texte tracé sur les tuiles de fond, y compris aux échelles des rues et du continent. Les noms de communes restent au premier plan et ne se chevauchent sur aucune des treize vues contrôlées. La carte a aussi été essayée aux largeurs de 320 et 780 pixels.
+
+Le zoom autour de Reignier-Ésery révèle notamment Pers-Jussy et Scientrier. Les essais dans l’interface de l’APK couvrent les sept mesures météo, la neige, l’ouverture d’une station, la relecture radar et la lecture d’une intensité par appui. Les noms sont également disponibles sans les tuiles en ligne.
+
 # Météo74 0.7.3
 
 26 novembre 2026. APK signé de `fr.meteo74.android`, version 17. Taille de 9 256 947 octets et SHA-256 `089b9cf05459fce59d416fdcbb55afde2307c374df4011bcc0275ebedf7d3151`. Le certificat est identique à celui de la 0.7.2. L’alignement et les ressources embarquées ont été vérifiés. Les 55 tests passent. Android Lint signale cinq avertissements et zéro erreur.

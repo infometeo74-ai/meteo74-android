@@ -18,7 +18,7 @@
     }
 
     function basemap(map, pane) {
-        const {leafletLayer, PolygonSymbolizer, LineSymbolizer, CenteredTextSymbolizer, LineLabelSymbolizer} = protomapsL;
+        const {leafletLayer, PolygonSymbolizer, LineSymbolizer} = protomapsL;
         const polygon = (dataLayer, fill) => ({dataLayer, symbolizer: new PolygonSymbolizer({fill})});
         const line = (dataLayer, color, width) => ({
             dataLayer, symbolizer: new LineSymbolizer({color, width, lineJoin:'round', lineCap:'round'})
@@ -37,19 +37,10 @@
             {...line('boundaries', '#969b9f', (z, f) => +f.props.admin_level <= 2 ? 1.2 : 0.65),
                 filter:(z, f) => Number(f.props.admin_level) <= (z < 7 ? 2 : 6)}
         ];
-        const nameStyle = {labelProps:['name_fr','name'], font:'500 11px system-ui', stroke:'#f4f5ee', width:2};
-        const landmarks = [
-            {dataLayer:'boundary_labels', maxzoom:5, filter:(_z, f) => +f.props.admin_level === 2,
-                symbolizer:new CenteredTextSymbolizer({...nameStyle, fill:'#798185', textTransform:'uppercase'})},
-            {dataLayer:'water_polygons_labels', minzoom:8,
-                symbolizer:new CenteredTextSymbolizer({...nameStyle, fill:'#527c90'})},
-            {dataLayer:'street_labels', minzoom:13,
-                symbolizer:new LineLabelSymbolizer({...nameStyle, fill:'#777b71'})}
-        ];
         leafletLayer({
             url:'https://vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt',
             pane, maxDataZoom:14, levelDiff:1, backgroundColor:'#eff0e9',
-            paintRules:rules, labelRules:landmarks, updateWhenIdle:true,
+            paintRules:rules, labelRules:[], updateWhenIdle:true,
             attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
     }
@@ -113,11 +104,16 @@
             nearby.sort(compare);
             labels.clearLayers();
             const anchors = [], nameBoxes = [];
+            // Keep open space for the weather field. Higher zooms admit smaller, closer towns.
+            const detail = Math.min(1, Math.max(0, (zoom - 6) / 6));
+            const minDistance = 50 - 10 * detail;
+            const maxLabels = Math.max(1, Math.floor(size.x * size.y / (11200 - 2700 * detail)));
             for (const row of nearby) {
+                if (anchors.length >= maxLabels) break;
                 const [name, y, x, level] = row, lng = x / 10000;
                 const coord = [y / 10000, lng + 360 * Math.round((center - lng) / 360)];
                 const point = map.latLngToContainerPoint(coord), px = point.x, py = point.y;
-                if (anchors.some(a => Math.abs(px-a.x) < 13 && Math.abs(py-a.y) < 12)) continue;
+                if (anchors.some(anchor => point.distanceTo(anchor) < minDistance)) continue;
                 const pin = [px-4,py-4,px+4,py+4];
                 if (nameBoxes.some(box => touches(box,pin))) continue;
                 const tier = level <= 6 ? 0 : level <= 9 ? 1 : 2;
@@ -126,7 +122,7 @@
                 const w = Math.ceil(measure.measureText(name).width), h = fontSize + 3;
                 const offsets = [[8,-h/2],[-8-w,-h/2],[-w/2,-h-7],[-w/2,7],[15,-h/2],[-15-w,-h/2]];
                 for (const [dx, dy] of offsets) {
-                    const box = [px+dx-4,py+dy-2,px+dx+w+4,py+dy+h+2];
+                    const box = [px+dx-7,py+dy-5,px+dx+w+7,py+dy+h+5];
                     if (box[0]<1 || box[1]<1 || box[2]>size.x-1 || box[3]>size.y-1 || occupied.some(b => touches(box,b))) continue;
                     const span = document.createElement('span');
                     span.textContent = name;
